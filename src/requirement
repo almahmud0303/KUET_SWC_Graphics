@@ -1,0 +1,24 @@
+KUET SWC 3D Graphics Project Requirements
+
+1. Create a virtual 3D environment using computer graphics techniques.
+2. Create 3D objects using basic geometric primitives.
+3. Implement object transformations: translation, rotation, and scaling.
+4. Implement composite transformations by combining multiple transformations.
+5. Develop custom vector and matrix operations for graphics calculations.
+6. Implement camera and viewing transformations for different perspectives.
+7. Implement perspective projection for realistic 3D visualization.
+8. Enable interactive manipulation of the 3D environment.
+9. Implement ambient, diffuse, and specular lighting.
+10. Implement the Phong illumination model with per-fragment Phong shading.
+11. Allow users to explore the environment from different viewpoints.
+
+Implementation status
+
+- 3D primitives: boxes, cylinders, spheres, quads, triangles, and annuli.
+- Transformations: custom matrix multiplication, Y rotation, and uniform scaling.
+- Composite model transformation: rotation matrix multiplied by scaling matrix.
+- Camera: orbit, tilt, and zoom controls with a custom look-at matrix.
+- Projection: custom perspective projection matrix.
+- Interaction: mouse/keyboard camera controls and model rotation/scaling.
+- Lighting: ambient + diffuse + specular Phong calculation in the fragment shader.
+- Shading: interpolated vertex normals provide per-fragment Phong shading.
