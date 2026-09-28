@@ -879,9 +879,7 @@ void curvedBrickFacade() {
 // Courtyard wings, stage and building masses
 // ---------------------------------------------------------------------------
 void courtyard() {
-    // West: long two-level windowed wing facing the lawn (photos 15, 18, 19).
-    { Place p(trs({-19.5f,0,-14.5f},90));
-      windowedWing({6,4.95f,2,STOREY,3,3.0f,false,true,false,true},21.0f); }
+    // Left side stays open to the lawn, per the corrected site layout.
     // North: stage wing with balcony corridors and projecting frames (13, 14, 21).
     { Place p(trs({-19.5f,0,-44.3f},0));
       galleryWing({8,4.6f,2,STOREY,3.2f,0x0Fu,0,0,false,PLINTH+STOREY-.32f},31.0f); }
@@ -894,13 +892,9 @@ void courtyard() {
     // Front wing courtyard corridor; bay 3 is the through-passage from the lobby.
     { Place p(trs({17.3f,0,-14.5f},180));
       galleryWing({8,4.6f,2,STOREY,3.2f,0,0,0x08u,true,0},51.0f); }
-    // Overhead slats at the north-west wing junction (photos 16, 19).
-    for(float x=-19.3f;x<-15.6f;x+=.28f) block(x,7.25f,-46.0f,x+.1f,7.45f,-43.2f,trim);
     // Masses.
-    block(-26.25f,0,-55.25f,-20.25f,7.8f,-3.35f,concrete);
     block(-26.25f,0,-55.25f,17.3f,7.8f,-48.25f,concrete);
     block(17.3f,0,-55.25f,21.25f,11.7f,-44.3f,concrete);
-    block(21.25f,0,-20.0f,28.25f,7.8f,-3.75f,concrete);
     block(21.25f,0,-33.0f,26.5f,11.7f,-20.0f,concrete);
     block(21.25f,0,-55.25f,25.45f,11.7f,-33.0f,concrete);
     block(21.25f,0,-20.0f,24.0f,11.7f,-14.5f,concrete);
@@ -1015,17 +1009,22 @@ void cafeteria() {
 }
 
 void exteriorElevations() {
-    // West exterior with free columns (photos 1, 2, 3).
-    { Place p(trs({-27,0,-56},-90)); windowedWing({11,53.4f/11,2,STOREY,3,3.4f,true,true,false,true},61.0f); }
+    // No exterior building wing along the open left side.
     // North exteriors: two-level wing and three-level block.
     { Place p(trs({17.3f,0,-56},180)); windowedWing({9,44.3f/9,2,STOREY,3,2.2f,false,true,false,true},71.0f); }
     { Place p(trs({29,0,-56},180)); windowedWing({2,11.7f/2,3,STOREY_TALL,3,2.2f,false,true,false,true},81.0f); }
-    // Two-level front face beside the curved wall; the tall block starts further north.
-    { Place p(trs({23.0f,0,-3.0f},0)); windowedWing({1,6.0f,2,STOREY,3,1.5f,false,true,false,true},91.0f); }
-    // East exterior: shop/service frontage, cafeteria, taller gallery block (8-12).
-    { Place p(trs({29,0,-3.0f},90));
-      windowedWing({3,17.0f/3,2,STOREY,3,3.0f,false,true,true,true},101.0f);
-      shopfront(); }
+    // Relocate the projecting front-right section behind the curved SWC facade.
+    // Keep its window heights and front width; shorten the depth to fit between
+    // the curved facade and the courtyard corridor (front z=-7.05, rear z=-13).
+    { Place relocated(trs({-11.0f,0,-6.0f},0,{1,1,.35f}));
+      block(21.25f,0,-20.0f,28.25f,7.8f,-3.75f,concrete);
+      { Place p(trs({23.0f,0,-3.0f},0));
+        windowedWing({1,6.0f,2,STOREY,3,1.5f,false,true,false,true},91.0f); }
+      { Place p(trs({29,0,-3.0f},90));
+        windowedWing({3,17.0f/3,2,STOREY,3,3.0f,false,true,true,true},101.0f);
+        shopfront(); }
+    }
+    // East exterior: cafeteria and taller gallery block (8-12).
     { Place p(trs({29,0,-20.0f},90)); cafeteria(); }
     { Place p(trs({29,0,-33.0f},90));
       galleryWing({4,23.0f/4,3,STOREY_TALL,2.8f,0x06u,0x01u,0,false,PLINTH+STOREY_TALL-.32f},111.0f); }
@@ -1241,7 +1240,7 @@ const CameraPreset presets[]={
     {"Front-right wide view (photo 30)",       {-5.0f,1.7f,27.0f},{8.0f,4.0f,0.0f},60},
     {"Cafeteria entrance (photo 12)",          {45.0f,1.7f,-27.5f},{29.0f,5.2f,-27.0f},60},
     {"Courtyard stage (photo 21)",             {3.0f,1.7f,-16.5f},{-3.0f,3.0f,-44.0f},66},
-    {"Windowed courtyard wing (photo 15)",     {9.0f,1.7f,-23.0f},{-19.0f,3.6f,-33.0f},62},
+    {"Open left courtyard lawn",              {9.0f,1.7f,-23.0f},{-19.0f,3.6f,-33.0f},62},
     {"Ground-floor corridor (photo 17)",       {18.9f,2.15f,-16.0f},{18.9f,2.1f,-30.0f},66},
     {"Aerial overview",                        {48.0f,58.0f,52.0f},{0.0f,0.0f,-20.0f},50},
 };

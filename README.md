@@ -53,7 +53,7 @@ offline. The program opens at a front three-quarter presentation view.
 | `4` | Front-right wide view | 3.08.04 AM |
 | `5` | Cafeteria entrance | 3.07.55 AM |
 | `6` | Courtyard stage | 3.07.59 AM |
-| `7` | Windowed courtyard wing | 3.07.56 AM |
+| `7` | Open left courtyard lawn | Corrected site layout |
 | `8` | Ground-floor corridor | 3.07.57 AM |
 | `9` | Aerial overview | - |
 
