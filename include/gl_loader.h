@@ -26,6 +26,21 @@ typedef ptrdiff_t GLsizeiptr;
 #define GL_LINK_STATUS 0x8B82
 #endif
 
+#ifndef GL_FRAMEBUFFER
+#define GL_FRAMEBUFFER 0x8D40
+#define GL_DEPTH_ATTACHMENT 0x8D00
+#define GL_FRAMEBUFFER_COMPLETE 0x8CD5
+#endif
+#ifndef GL_DEPTH_COMPONENT24
+#define GL_DEPTH_COMPONENT24 0x81A6
+#endif
+#ifndef GL_CLAMP_TO_BORDER
+#define GL_CLAMP_TO_BORDER 0x812D
+#endif
+#ifndef GL_MULTISAMPLE
+#define GL_MULTISAMPLE 0x809D
+#endif
+
 extern void (APIENTRY *glGenVertexArrays)(GLsizei, GLuint *);
 extern void (APIENTRY *glBindVertexArray)(GLuint);
 extern void (APIENTRY *glDeleteVertexArrays)(GLsizei, const GLuint *);
@@ -51,6 +66,14 @@ extern void (APIENTRY *glEnableVertexAttribArray)(GLuint);
 extern GLint (APIENTRY *glGetUniformLocation)(GLuint, const GLchar *);
 extern void (APIENTRY *glUniformMatrix4fv)(GLint, GLsizei, GLboolean, const GLfloat *);
 extern void (APIENTRY *glUniform3f)(GLint, GLfloat, GLfloat, GLfloat);
+extern void (APIENTRY *glUniformMatrix3fv)(GLint, GLsizei, GLboolean, const GLfloat *);
+extern void (APIENTRY *glUniform1i)(GLint, GLint);
+extern void (APIENTRY *glUniform1f)(GLint, GLfloat);
+extern void (APIENTRY *glGenFramebuffers)(GLsizei, GLuint *);
+extern void (APIENTRY *glBindFramebuffer)(GLenum, GLuint);
+extern void (APIENTRY *glFramebufferTexture2D)(GLenum, GLenum, GLenum, GLuint, GLint);
+extern GLenum (APIENTRY *glCheckFramebufferStatus)(GLenum);
+extern void (APIENTRY *glDeleteFramebuffers)(GLsizei, const GLuint *);
 
 int load_opengl_functions(void *(*get_proc_address)(const char *));
 

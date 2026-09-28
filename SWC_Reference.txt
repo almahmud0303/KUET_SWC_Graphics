@@ -1,0 +1,393 @@
+KUET STUDENT WELFARE CENTER (SWC)
+Architectural reference for the 3D graphics project
+Based on the 30 photographs in the project folder
+
+1. PURPOSE AND ACCURACY
+
+This document explains the visible SWC building, its surroundings, and how to
+represent them using the project's geometric primitives and graphics techniques.
+The photographs show the main entrance, curved brick facade, cafeteria, side
+elevations, courtyard, balconies, corridors, stage, and landscaping.
+
+Visible features are described as observations. Dimensions are starting estimates
+for modeling, not measured dimensions. The complete footprint, concealed rooms,
+roof construction, and connections behind walls cannot be established exactly
+from these photographs. No compass orientation is confirmed by the images.
+
+2. OVERALL BUILDING ORGANIZATION
+
+The SWC consists of connected rectangular wings surrounding a large grass
+courtyard. Several wings have two visible occupied levels, while the taller
+cafeteria/corridor block shows three levels in some views. Do not give every wing
+the same height or number of floors.
+
+The architectural character comes from pale concrete frames, exposed red brick,
+flat projecting roof slabs, square columns, repetitive windows, and open covered
+circulation. The front has a broad entrance portico and a prominent curved brick
+volume on the viewer's right. A paved plaza lies in front of the entrance.
+
+Inside, the lawn is bordered by raised walkways and corridors. Open upper-level
+balconies look toward the lawn. A brick backdrop and low curved stage/platform
+occupy one side of the courtyard. The exact courtyard enclosure should remain
+adjustable until a measured plan or an overhead reference is available.
+
+3. MAIN FRONT ENTRANCE
+
+A broad, flat white canopy covers a double-height entrance space. Tall square
+columns stand well in front of the recessed walls and doors. The roof's underside
+is mostly plain, with small dark surface-mounted light fixtures.
+
+Broad pale steps connect the red-paved plaza to the raised entrance floor. The
+main timber doorway has multiple panels and a row of louvered panels above it.
+Warm orange-brown wall panels flank the entrance. Openings above and behind the
+door area reveal upper circulation and a deeper connection through the building.
+
+The visual depth is important: place columns, balcony edges, walls, and doors on
+separate depth planes. Build actual openings around the entrance and corridors.
+Large banners hang from the canopy in several photos. These, along with event
+boards and balloon decorations, are temporary details rather than building form.
+
+4. CURVED BRICK SWC FACADE
+
+The front-right feature is a tall convex red-brick wall carrying Bengali and
+English lettering for the Student Welfare Center. It projects beyond the nearby
+recessed corridor and extends above the adjacent canopy.
+
+Its silhouette is curved in plan and has a visibly slanted/flared left edge.
+Photographs do not establish an exact radius or prove that the curve is circular
+or elliptical. Use an adjustable curved wall segment, then compare its outline
+against the front and oblique photos.
+
+Thin pale horizontal bands divide the brick surface. Tall narrow louver strips
+with projecting pale vertical fins frame the lettering area. Brick courses wrap
+around the curve, and the base is a darker brick plinth. Lawn and small shrubs
+surround the front and side of this volume.
+
+For implementation, generate a curved wall from connected vertical quads, with
+inner and outer surfaces and edge caps. Start with 48-64 segments across the
+visible arc. Add the pale bands as matching narrow curved strips. Keep radius,
+arc angle, height, and taper adjustable. A full solid cylinder will need changes
+to reproduce this partial, flared facade accurately.
+
+5. WINDOWED WINGS
+
+The long windowed wings contain a strong repeated grid. Large pale columns mark
+structural bays, with smaller piers dividing windows within each bay. A continuous
+horizontal beam separates floors. The projecting canopy shades the facade and
+the walkway beneath it.
+
+A typical window assembly contains:
+- A recessed opening inside a pale concrete surround.
+- A short horizontal transom above the main glazing.
+- Two or more framed glass panels below the transom.
+- Dense horizontal and vertical metal security bars.
+- An exposed-brick panel beneath the glass.
+- A slightly projecting brick sill or cap.
+
+Glass varies from dark green-grey to pale blue-grey because of reflections and
+interior darkness. It should not appear uniformly bright blue. Some panes are
+open, showing dark gaps. Upper windows on the long two-level wing have external
+AC units mounted on metal brackets near sill level.
+
+6. BALCONIES, COURTYARD FRAMES, AND CORRIDORS
+
+Upper courtyard corridors have pale solid parapets with long rectangular brick
+insets. Thin horizontal metal rails run above the solid panels and across gaps.
+Doors and windows sit behind these balcony edges in deep shade.
+
+Some courtyard bays have projecting rectangular concrete frames: tall uprights
+joined by horizontal beams. These create open rectangular spaces in front of the
+upper corridor. They are distinct from the enclosed room walls behind them.
+A short run of closely spaced overhead slats is visible near a wing junction.
+
+The covered ground-floor corridor has repeated square columns along the lawn,
+transverse ceiling beams, pale floor tiles, a dark edge strip, and scattered dark
+square tile accents. Wooden doors and high rectangular openings line its inner
+wall. Black cylindrical ceiling lights and long tube fixtures are visible.
+A staircase can be seen at the far end of the corridor photo.
+
+Keep the corridor floor slightly above the lawn. Use steps at photographed access
+points. The shaded corridor should remain readable while being darker than the
+sunlit grass and external columns.
+
+7. COURTYARD AND BRICK STAGE
+
+The courtyard is a broad open grass area with relatively sparse planting. Small
+trees and flowering shrubs tend to stand near the building edges. It is visually
+more open than the densely landscaped external paths.
+
+One wing has a large rectangular red-brick backdrop in front of the building.
+A raised platform and low curved brick edge extend into the courtyard. Short
+pale steps are visible toward the right side in the closer oblique view.
+The structure appears stage-like; its precise function is not established by
+the photographs alone.
+
+Model the backdrop with a thick box. Build the platform separately and construct
+the curved edge from an extruded arc or short connected wall segments. Preserve
+the relationship between this feature, the balcony behind it, and the open lawn.
+
+8. CAFETERIA AND ADJACENT EXTERIOR
+
+The cafeteria has a recessed ground-floor entrance beneath a projecting balcony
+or canopy bearing Bengali lettering and the English word CAFETERIA. Windows
+flank the dark doorway. The entrance is reached by broad shallow steps.
+
+A straight external staircase rises immediately to the right. It has pale treads
+and a brick side element. A rectangular planter stands near its lower end. Above
+the cafeteria sign is a transparent-looking railing with metal posts. A tall
+rectangular louver panel occupies the wall above. The adjacent building shows
+multiple levels of windows and brick infill panels.
+
+Nearby exterior views show shopfronts, shutters, signs, AC units, a gated opening,
+brick paving, and planting. These belong to a more detailed secondary facade and
+should be placed using the corresponding photos rather than repeated everywhere.
+
+9. FRONT PLAZA AND PATHS
+
+The front plaza is paved in red/terracotta rectangular units, interrupted by small
+tan square groups. A large circular multicolored alpona/rangoli-style painting
+lies in front of the entrance. It contains concentric borders, petal-like forms,
+and repeated radial motifs in white, green, yellow, blue, and red.
+
+Use a flat paved surface with small color variations. Place the circular artwork
+slightly above it to avoid depth flickering. Annuli create the borders, while
+radially repeated triangles or custom petal meshes add recognizable detail.
+
+Outside the building, a concrete pedestrian/campus road runs beside clipped
+hedges. Narrow red-paver paths connect to entrances. Small drainage channels or
+grated strips occur beside some landscaped edges. Bicycles and motorcycles in
+the entrance photos are optional movable props.
+
+10. GAZEBO AND LANDSCAPING
+
+A bamboo shelter stands near the path and cafeteria-side landscaping. It has
+slender posts, low woven panels, a lattice band, open sides above the railing,
+and a broad thatched hipped roof. The exact footprint and number of posts are
+partly obscured, so use an adjustable polygonal or rectangular shelter.
+
+The landscape includes coconut palms, fan-leaved palms, large branching trees,
+small ornamental trees, clipped hedges, rounded shrubs, and red/yellow ornamental
+foliage. Many trunks have a white-painted lower section topped by a narrow red
+band. Vary tree height, crown shape, and spacing to match the views.
+
+Primitive choices:
+- Trunks and branches: tapered or connected cylinders.
+- Rounded crowns: overlapping spheres with varied size and green shades.
+- Palm fronds: bent strips or groups of narrow triangles.
+- Hedges: repeated overlapping low foliage clusters.
+- Gazebo posts: thin cylinders; wall panels: quads and crossed thin beams.
+- Thatched roof: sloping triangular/quadrilateral faces with tan variations.
+
+11. STARTING PROPORTIONS
+
+These are modeling assumptions, not measurements extracted from the photos.
+Choose one consistent unit scale and refine it against several viewpoints.
+
+Component                         Suggested starting range
+Floor-to-floor height             3.3-3.8 units
+Two-level roof height             7.0-8.0 units above surrounding ground
+Square column width               0.40-0.60 units
+Structural bay spacing            2.7-3.8 units, depending on wing
+Covered corridor width            2.4-3.2 units
+Roof fascia/slab visible depth     0.30-0.55 units
+Individual window width            1.4-1.9 units
+Window sill height                0.65-0.90 units above floor
+Balcony guard total height         0.95-1.15 units
+Step riser                        0.12-0.17 units
+Step tread                        0.28-0.35 units
+
+Treat one unit as approximately one metre if convenient. Estimate overall wing
+lengths from the chosen bay spacing and the visible bay counts. Do not assume
+the roof thickness is equal to the larger beams visible below it. Perspective
+and tree cover prevent reliable exact totals for all columns and windows.
+
+12. MATERIALS AND LIGHTING
+
+Suggested base RGB values in the range 0 to 1:
+Pale concrete     (0.84, 0.87, 0.83)
+Light trim        (0.94, 0.95, 0.91)
+Red brick         (0.50, 0.20, 0.13)
+Light brick       (0.62, 0.31, 0.22)
+Dark glass        (0.10, 0.18, 0.18)
+Metal frames      (0.72, 0.76, 0.73)
+Wood doors        (0.29, 0.12, 0.06)
+Terracotta paving (0.53, 0.27, 0.20)
+Tan accents       (0.67, 0.47, 0.31)
+Grass             (0.14, 0.43, 0.13)
+
+These are starting colors, not calibrated samples. Let lighting create shaded
+surfaces instead of assigning every shaded face a permanently dark base color.
+Use low specular response for brick and concrete, higher response for metal and
+glass, and moderate ambient light so covered passages remain visible.
+
+Several photos show strong sunshine; later front views show softer illumination.
+Choose one consistent sun direction for the scene. A Phong fragment shader gives
+surface lighting, but it does not automatically cast shadows from roofs or trees.
+Matching those shadows requires a separate shadow technique, such as shadow
+mapping. Glass reflections also require additional treatment beyond plain Phong
+highlights if photographic realism is desired.
+
+13. CONNECTION TO THE GRAPHICS REQUIREMENTS
+
+Use boxes for slabs, beams, columns, parapets, doors, AC housings, and stairs.
+Use cylinders for poles, railings, tree trunks, and light fixtures. Use spheres
+for foliage and small rounded props. Quads and triangles support curved walls,
+roof faces, glazing, and palm leaves. Annuli support plaza decorations.
+
+Build reusable components such as WindowBay, ColumnBay, BalconyPanel, Stair,
+ACUnit, Tree, and Gazebo. Position copies using translation and rotate whole
+wings around the vertical axis. Keep component dimensions and wing lengths in
+parameters so reference-based adjustments remain consistent.
+
+For column-vector math, a local transform T * R * S scales the component first,
+then rotates it, then translates it. Combine parent and child transforms when
+placing a window inside a wing or a wing inside the whole scene. Non-uniform
+scaling is useful for primitives; transformed normals need the inverse-transpose
+normal matrix when such scaling is applied in the shader.
+
+Use custom look-at and perspective matrices for camera views. Useful camera
+presets include the main entrance, curved facade, cafeteria, courtyard stage,
+windowed courtyard wing, and a ground-floor corridor. An eye height around
+1.6-1.8 units provides a starting point for a walking view. Photo matching also
+requires adjusting camera position, field of view, and target together.
+
+14. PHOTO-BY-PHOTO REFERENCE INDEX
+
+All files share the prefix "WhatsApp Image 2026-09-26 at " and suffix ".jpeg".
+Times below are filename identifiers, not evidence of capture time or sun angle.
+Parenthetical numbers are part of the filenames.
+
+01. 3.07.47 AM (1)
+    Long covered facade behind palms and trees; tall columns, two window levels,
+    planted lawn, shrubs, and painted trunk bases. Useful for canopy depth.
+
+02. 3.07.47 AM
+    Oblique building end with tall louver panels, brick infill, deep roof edge,
+    wraparound raised walkway, and an adjoining corridor wing in the background.
+
+03. 3.07.48 AM
+    Windowed corner behind a large foreground tree; two levels, AC compressors,
+    square columns, brick sills, and a short stair to the raised walkway.
+
+04. 3.07.50 AM
+    Secondary exterior corner with a lower windowed wing meeting a taller block;
+    thick white grid, brick lower window panels, narrow path, and dense trees.
+
+05. 3.07.51 AM (1)
+    Road looking toward the campus boundary, with the windowed building on the
+    left, hedge along the road, drainage strip, trees, and distant buildings.
+
+06. 3.07.51 AM
+    Path intersection with the thatched bamboo gazebo on the right; red paving,
+    clipped hedges, painted tree trunks, and a concrete road receding ahead.
+
+07. 3.07.52 AM
+    Close exterior corner and side entrance: pale steps, raised plinth, recessed
+    windows, brick sills, horizontal wall joints, and a small security camera.
+
+08. 3.07.54 AM (1)
+    Shop/service frontage beneath a tall canopy; shutters, storefront glazing,
+    AC units, steps, a brick planter, and a gated opening to the right.
+
+09. 3.07.54 AM (2)
+    Gazebo in front of a tall entrance canopy; staircase and upper circulation
+    behind it, a substantial front column, low planters, and clipped hedges.
+
+10. 3.07.54 AM (3)
+    Taller exterior block with three visible levels, stacked window bands,
+    brick-inset balcony panels, projecting white frames, and foreground gazebo.
+
+11. 3.07.54 AM
+    Broad taller facade with brick infill, window bands, upper balconies, and a
+    large ground opening at left; angular decorative panels stand in the garden.
+
+12. 3.07.55 AM
+    Best cafeteria entrance reference: bilingual sign, right-side stair, central
+    upper louver, transparent-looking balcony railing, steps, and planter.
+
+13. 3.07.56 AM (1)
+    Oblique courtyard stage view: brick backdrop, curved low wall, pale platform,
+    stairs toward the right, and repeated open concrete frames above the wing.
+
+14. 3.07.56 AM (2)
+    Two-level courtyard corridor facade: brick-inset parapets, horizontal rails,
+    recessed upper doors/windows, lower windows, and an open ground passage.
+
+15. 3.07.56 AM
+    Wide view of the long two-level windowed wing across the lawn; regular bays,
+    AC row, continuous canopy, raised walkway, and shallow access steps.
+
+16. 3.07.57 AM (1)
+    Courtyard corner where a taller balcony block meets the lower windowed wing;
+    useful for differing heights, open circulation, and the overhead slat detail.
+
+17. 3.07.57 AM
+    Interior covered corridor: tiled floor, dark tile accents and border,
+    repeated ceiling beams, open lawn-side bays, doors, lights, and distant stair.
+
+18. 3.07.58 AM (1)
+    Close window grid reference: transoms, glazing, security bars, brick panels,
+    AC housings/brackets/pipes, large piers, and canopy-mounted lights.
+
+19. 3.07.58 AM
+    Oblique long windowed courtyard wing: repeated AC units, deep overhang,
+    timber door, multiple stair access points, and a narrow raised perimeter walk.
+
+20. 3.07.59 AM (1)
+    View along the raised walkway toward a courtyard junction; balcony brick
+    insets, projecting frames, open passage, shrubs, and near-side AC brackets.
+
+21. 3.07.59 AM
+    Wide near-frontal stage-side elevation across the lawn. Best for relating
+    stage size to the wing, its open balcony, and the courtyard's broad openness.
+
+22. 3.08.00 AM
+    Broad courtyard corner combining a two-level wing and taller corridor block;
+    valuable for connected massing, repeated upper frames, and lawn boundaries.
+
+23. 3.08.01 AM (1)
+    Wide front-left approach: long colonnade, entrance canopy, broad steps,
+    brick plaza, circular artwork, shrubs, and hanging event banners.
+
+24. 3.08.01 AM
+    Closer front-left windowed wing: double-height columns, roof underside,
+    two window levels, AC row, lawn, ornamental foliage, and entrance stair edge.
+
+25. 3.08.02 AM (1)
+    Close curved brick SWC facade: lettering, white bands, louver strips/fins,
+    raised silhouette, adjoining canopy, palms, lawn, and a low brick bed edge.
+
+26. 3.08.02 AM
+    Clear frontal entrance composition with curved brick volume to the right,
+    open portico, recessed doors, steps, plaza artwork, and landscaped strip.
+
+27. 3.08.03 AM (1)
+    Wider entrance in softer light; left colonnade, banners, parked cycles,
+    motorcycles, plaza, and illuminated ground-floor windows.
+
+28. 3.08.03 AM
+    Close frontal entry detail: wooden doors and upper louvers, deep ceiling,
+    columns, rear balcony edge, broad stairs, banners, and parked vehicles.
+
+29. 3.08.04 AM (1)
+    Blurred wider front-right view. Useful for the overall silhouette and plaza
+    relationship; use sharper photos for small architectural details.
+
+30. 3.08.04 AM
+    Sharper wide front-right view showing curved wall flare and projection,
+    entrance depth, balcony return, steps, plaza circle, and side lawn.
+
+15. IMPLEMENTATION PRIORITIES
+
+First establish the connected wings, their differing heights, the courtyard void,
+the deep front portico, and the curved brick volume. Compare these masses from
+the main entrance and courtyard camera views before adding smaller details.
+
+Next add consistent window modules, brick infill panels, balconies, rails, steps,
+and the cafeteria staircase. Follow with the stage, plaza artwork, louvers, AC
+units, and signs. Add trees and shrubs after the architecture is positioned so
+foliage does not hide proportion errors during modeling.
+
+Exact reconstruction would require a measured plan or additional references for
+concealed areas, one reliable real-world dimension for scale, and clearer views
+of uncertain junctions. Keep those parts adjustable in the model.

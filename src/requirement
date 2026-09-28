@@ -14,11 +14,13 @@ KUET SWC 3D Graphics Project Requirements
 
 Implementation status
 
-- 3D primitives: boxes, cylinders, spheres, quads, triangles, and annuli.
-- Transformations: custom matrix multiplication, Y rotation, and uniform scaling.
-- Composite model transformation: rotation matrix multiplied by scaling matrix.
-- Camera: orbit, tilt, and zoom controls with a custom look-at matrix.
-- Projection: custom perspective projection matrix.
-- Interaction: mouse/keyboard camera controls and model rotation/scaling.
-- Lighting: ambient + diffuse + specular Phong calculation in the fragment shader.
-- Shading: interpolated vertex normals provide per-fragment Phong shading.
+- 3D primitives: boxes, tapered and elliptical cylinders, rods, spheres, ellipsoids, quads, triangles, and annuli.
+- Transformations: custom translation, X/Y rotation, uniform and non-uniform scaling, and matrix multiplication.
+- Composite transformations: T * R * S local transforms combined parent * child on a transform stack
+  (windows inside wings, wings inside the site), plus the interactive whole-model transform.
+- Vector/matrix operations: custom Vec3/Mat4/Mat3 math including the inverse-transpose normal matrix.
+- Camera: orbit, pan, walk, and zoom with a custom look-at matrix; nine reference-photo viewpoints.
+- Projection: custom perspective projection matrix (and orthographic projection for the sun's shadow map).
+- Interaction: mouse/keyboard camera controls, view presets, and model translation/rotation/scaling.
+- Lighting: ambient + diffuse + specular Phong calculation with per-material specular strength.
+- Shading: per-fragment Phong shading with interpolated normals, shadow mapping, and procedural brick/paving detail.

@@ -1,6 +1,12 @@
+// KUET Student Welfare Center (SWC) - interactive 3D model.
+// The layout follows SWC_Reference.txt and the 30 photographs in project/.
+// Units are approximately metres. +X is to the viewer's right when facing the
+// main entrance, +Z points from the building towards the front plaza, +Y is up.
+
 #include <algorithm>
 #include <cstddef>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -15,33 +21,28 @@ namespace {
 
 constexpr float PI = 3.14159265358979323846f;
 
+// ---------------------------------------------------------------------------
+// Custom vector and matrix operations (column-major, OpenGL convention)
+// ---------------------------------------------------------------------------
 struct Vec3 { float x, y, z; };
 struct Color { float r, g, b; };
-struct Vertex { Vec3 position, normal; Color color; };
 struct Mat4 { float m[16]; };
+struct Mat3 { float m[9]; };
 
-std::vector<Vertex> mesh;
-float cameraYaw = 35.0f;
-float cameraPitch = 20.0f;
-float cameraDistance = 43.0f;
-float modelRotation = 0.0f;
-float modelScale = 1.0f;
-bool dragging = false;
-double lastMouseX = 0.0, lastMouseY = 0.0;
-int framebufferWidth = 1280, framebufferHeight = 800;
-
-Vec3 operator-(Vec3 a, Vec3 b) { return {a.x-b.x,a.y-b.y,a.z-b.z}; }
-Vec3 cross(Vec3 a, Vec3 b) {
-    return {a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x};
-}
-float dot(Vec3 a, Vec3 b) { return a.x*b.x+a.y*b.y+a.z*b.z; }
-Vec3 normalize(Vec3 v) {
-    float length=std::sqrt(dot(v,v));
-    return length>0.0f ? Vec3{v.x/length,v.y/length,v.z/length} : Vec3{0,1,0};
-}
+Vec3 operator+(Vec3 a,Vec3 b) { return {a.x+b.x,a.y+b.y,a.z+b.z}; }
+Vec3 operator-(Vec3 a,Vec3 b) { return {a.x-b.x,a.y-b.y,a.z-b.z}; }
+Vec3 operator*(Vec3 a,float s) { return {a.x*s,a.y*s,a.z*s}; }
+Vec3 cross(Vec3 a,Vec3 b) { return {a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x}; }
+float dot(Vec3 a,Vec3 b) { return a.x*b.x+a.y*b.y+a.z*b.z; }
+float length(Vec3 v) { return std::sqrt(dot(v,v)); }
+Vec3 normalize(Vec3 v) { float l=length(v); return l>1e-8f ? v*(1.0f/l) : Vec3{0,1,0}; }
+Vec3 lerp(Vec3 a,Vec3 b,float t) { return a+(b-a)*t; }
 float radians(float degrees) { return degrees*PI/180.0f; }
 float limit(float value,float low,float high) { return std::max(low,std::min(value,high)); }
+Color mix(Color a,Color b,float t) { return {a.r+(b.r-a.r)*t,a.g+(b.g-a.g)*t,a.b+(b.b-a.b)*t}; }
+float hash1(float n) { float s=std::sin(n*12.9898f+78.233f)*43758.5453f; return s-std::floor(s); }
 
+Mat4 identity() { Mat4 r{}; r.m[0]=r.m[5]=r.m[10]=r.m[15]=1.0f; return r; }
 Mat4 multiply(const Mat4& a,const Mat4& b) {
     Mat4 result{};
     for(int column=0;column<4;++column)
@@ -50,16 +51,24 @@ Mat4 multiply(const Mat4& a,const Mat4& b) {
                 result.m[column*4+row]+=a.m[k*4+row]*b.m[column*4+k];
     return result;
 }
-Mat4 rotationY(float angle) {
-    Mat4 result{}; float c=std::cos(angle),s=std::sin(angle);
-    result.m[0]=c; result.m[2]=-s; result.m[5]=1.0f;
-    result.m[8]=s; result.m[10]=c; result.m[15]=1.0f;
-    return result;
+Mat4 translation(Vec3 offset) {
+    Mat4 r=identity(); r.m[12]=offset.x; r.m[13]=offset.y; r.m[14]=offset.z; return r;
 }
-Mat4 scaling(float amount) {
-    Mat4 result{};
-    result.m[0]=amount; result.m[5]=amount; result.m[10]=amount; result.m[15]=1.0f;
-    return result;
+Mat4 rotationX(float angle) {
+    Mat4 r=identity(); float c=std::cos(angle),s=std::sin(angle);
+    r.m[5]=c; r.m[6]=s; r.m[9]=-s; r.m[10]=c; return r;
+}
+Mat4 rotationY(float angle) {
+    Mat4 r=identity(); float c=std::cos(angle),s=std::sin(angle);
+    r.m[0]=c; r.m[2]=-s; r.m[8]=s; r.m[10]=c; return r;
+}
+Mat4 scaling(Vec3 amount) {
+    Mat4 r=identity(); r.m[0]=amount.x; r.m[5]=amount.y; r.m[10]=amount.z; return r;
+}
+Mat4 scaling(float amount) { return scaling(Vec3{amount,amount,amount}); }
+// Composite local transform T * R * S: scale first, then yaw about +Y, then translate.
+Mat4 trs(Vec3 position,float yawDegrees,Vec3 scale={1,1,1}) {
+    return multiply(translation(position),multiply(rotationY(radians(yawDegrees)),scaling(scale)));
 }
 Mat4 perspective(float fov,float aspect,float nearPlane,float farPlane) {
     Mat4 result{};
@@ -69,6 +78,13 @@ Mat4 perspective(float fov,float aspect,float nearPlane,float farPlane) {
     result.m[11]=-1.0f;
     result.m[14]=(2.0f*farPlane*nearPlane)/(nearPlane-farPlane);
     return result;
+}
+Mat4 orthographic(float left,float right,float bottom,float top,float nearPlane,float farPlane) {
+    Mat4 r=identity();
+    r.m[0]=2.0f/(right-left); r.m[5]=2.0f/(top-bottom); r.m[10]=-2.0f/(farPlane-nearPlane);
+    r.m[12]=-(right+left)/(right-left); r.m[13]=-(top+bottom)/(top-bottom);
+    r.m[14]=-(farPlane+nearPlane)/(farPlane-nearPlane);
+    return r;
 }
 Mat4 lookAt(Vec3 eye,Vec3 target,Vec3 up) {
     Vec3 forward=normalize(target-eye);
@@ -82,37 +98,143 @@ Mat4 lookAt(Vec3 eye,Vec3 target,Vec3 up) {
     result.m[14]=dot(forward,eye); result.m[15]=1.0f;
     return result;
 }
+Vec3 transformPoint(const Mat4& m,Vec3 p) {
+    return {m.m[0]*p.x+m.m[4]*p.y+m.m[8]*p.z+m.m[12],
+            m.m[1]*p.x+m.m[5]*p.y+m.m[9]*p.z+m.m[13],
+            m.m[2]*p.x+m.m[6]*p.y+m.m[10]*p.z+m.m[14]};
+}
+// Inverse-transpose of the upper 3x3, so normals stay perpendicular under non-uniform scaling.
+Mat3 normalMatrix(const Mat4& m) {
+    float a=m.m[0],b=m.m[4],c=m.m[8],d=m.m[1],e=m.m[5],f=m.m[9],g=m.m[2],h=m.m[6],i=m.m[10];
+    float c00=e*i-f*h,c01=-(d*i-f*g),c02=d*h-e*g;
+    float c10=-(b*i-c*h),c11=a*i-c*g,c12=-(a*h-b*g);
+    float c20=b*f-c*e,c21=-(a*f-c*d),c22=a*e-b*d;
+    float det=a*c00+b*c01+c*c02; float k=std::fabs(det)>1e-12f ? 1.0f/det : 0.0f;
+    Mat3 n{};
+    n.m[0]=c00*k; n.m[3]=c01*k; n.m[6]=c02*k;
+    n.m[1]=c10*k; n.m[4]=c11*k; n.m[7]=c12*k;
+    n.m[2]=c20*k; n.m[5]=c21*k; n.m[8]=c22*k;
+    return n;
+}
+Vec3 transformNormal(const Mat3& n,Vec3 v) {
+    return {n.m[0]*v.x+n.m[3]*v.y+n.m[6]*v.z,n.m[1]*v.x+n.m[4]*v.y+n.m[7]*v.z,n.m[2]*v.x+n.m[5]*v.y+n.m[8]*v.z};
+}
 
-void addTriangle(Vec3 a,Vec3 b,Vec3 c,Vec3 normal,Color color) {
-    mesh.push_back({a,normal,color}); mesh.push_back({b,normal,color}); mesh.push_back({c,normal,color});
+// ---------------------------------------------------------------------------
+// Materials. "pattern" selects a procedural detail in the fragment shader.
+// ---------------------------------------------------------------------------
+constexpr float PLAIN=0, BRICK=1, GLASS=2, NATURAL=3, PAVING=4, THATCH=5, TILE=6;
+struct Material { Color color; float gloss=.08f; float pattern=PLAIN; };
+struct Vertex { Vec3 position, normal; Color color; float gloss, pattern; };
+
+// Base colours from section 12 of SWC_Reference.txt.
+const Material concrete{{.84f,.87f,.83f}}, trim{{.94f,.95f,.91f}}, roofMembrane{{.60f,.61f,.58f},.04f,NATURAL};
+const Material brick{{.50f,.20f,.13f},.05f,BRICK}, brickLight{{.62f,.31f,.22f},.05f,BRICK};
+const Material brickDark{{.36f,.15f,.10f},.04f,BRICK}, warmPanel{{.66f,.36f,.22f},.06f,BRICK};
+const Material metal{{.72f,.76f,.73f},.55f}, metalDark{{.20f,.22f,.22f},.45f};
+const Material wood{{.29f,.12f,.06f},.25f}, woodGroove{{.20f,.08f,.04f},.2f};
+const Material paving{{.53f,.27f,.20f},.06f,PAVING}, tanPaver{{.67f,.47f,.31f},.06f};
+const Material grass{{.14f,.43f,.13f},.03f,NATURAL}, soil{{.30f,.24f,.17f},.02f,NATURAL};
+const Material walkway{{.82f,.80f,.75f},.30f,TILE}, darkTile{{.17f,.17f,.18f},.35f};
+const Material road{{.64f,.63f,.60f},.04f,NATURAL}, darkGap{{.05f,.06f,.06f},.05f};
+const Material lampBlack{{.05f,.05f,.05f},.6f}, lampWhite{{1.0f,1.0f,.95f},.2f};
+const Material bark{{.33f,.25f,.18f},.04f,NATURAL}, palmBark{{.45f,.40f,.33f},.04f,NATURAL};
+const Material whitePaint{{.95f,.95f,.92f},.08f}, redPaint{{.75f,.10f,.08f},.1f};
+const Material acBody{{.86f,.87f,.84f},.3f}, bamboo{{.72f,.56f,.32f},.15f}, thatch{{.63f,.49f,.30f},.02f,THATCH};
+const Material clearGlass{{.60f,.76f,.78f},.9f,GLASS}, signDark{{.22f,.23f,.24f},.5f};
+
+Material glassFor(float seed) {
+    float h=hash1(seed);
+    if(h<.10f) return {{.025f,.03f,.03f},.05f};                       // open pane: dark interior gap
+    Color dark{.10f,.18f,.18f}, pale{.40f,.50f,.53f};
+    return {mix(dark,pale,hash1(seed*1.37f+3.1f)*.65f),.9f,GLASS};
 }
-void addQuad(Vec3 a,Vec3 b,Vec3 c,Vec3 d,Vec3 normal,Color color) {
-    addTriangle(a,b,c,normal,color); addTriangle(a,c,d,normal,color);
+Material leafMaterial(float seed,float lightness=0.0f) {
+    Color deep{.07f,.25f,.07f}, fresh{.25f,.50f,.14f};
+    return {mix(deep,fresh,limit(hash1(seed)*.8f+lightness,0,1)),.06f,NATURAL};
 }
-void box(float x,float y,float z,float width,float height,float depth,Color color) {
+
+// ---------------------------------------------------------------------------
+// Scene-graph style transform stack and mesh primitives
+// ---------------------------------------------------------------------------
+struct Frame { Mat4 model; Mat3 normal; };
+std::vector<Vertex> mesh;
+std::vector<Frame> frames;
+
+// RAII parent transform: children drawn inside the scope inherit parent * local.
+class Place {
+public:
+    explicit Place(const Mat4& local) {
+        Mat4 world=multiply(frames.back().model,local);
+        frames.push_back({world,normalMatrix(world)});
+    }
+    ~Place() { frames.pop_back(); }
+    Place(const Place&)=delete;
+    Place& operator=(const Place&)=delete;
+};
+
+void emit(Vec3 p,Vec3 n,const Material& m) {
+    const Frame& f=frames.back();
+    mesh.push_back({transformPoint(f.model,p),normalize(transformNormal(f.normal,n)),m.color,m.gloss,m.pattern});
+}
+void addTriangle(Vec3 a,Vec3 b,Vec3 c,Vec3 n,const Material& m) { emit(a,n,m); emit(b,n,m); emit(c,n,m); }
+void addTriangle(Vec3 a,Vec3 b,Vec3 c,const Material& m) { addTriangle(a,b,c,normalize(cross(b-a,c-a)),m); }
+void addQuad(Vec3 a,Vec3 b,Vec3 c,Vec3 d,Vec3 n,const Material& m) { addTriangle(a,b,c,n,m); addTriangle(a,c,d,n,m); }
+void addQuad(Vec3 a,Vec3 b,Vec3 c,Vec3 d,const Material& m) { addQuad(a,b,c,d,normalize(cross(b-a,c-a)),m); }
+
+void box(float x,float y,float z,float width,float height,float depth,const Material& m) {
     float x0=x-width/2,x1=x+width/2,y0=y-height/2,y1=y+height/2,z0=z-depth/2,z1=z+depth/2;
-    addQuad({x0,y0,z1},{x1,y0,z1},{x1,y1,z1},{x0,y1,z1},{0,0,1},color);
-    addQuad({x1,y0,z0},{x0,y0,z0},{x0,y1,z0},{x1,y1,z0},{0,0,-1},color);
-    addQuad({x1,y0,z1},{x1,y0,z0},{x1,y1,z0},{x1,y1,z1},{1,0,0},color);
-    addQuad({x0,y0,z0},{x0,y0,z1},{x0,y1,z1},{x0,y1,z0},{-1,0,0},color);
-    addQuad({x0,y1,z1},{x1,y1,z1},{x1,y1,z0},{x0,y1,z0},{0,1,0},color);
-    addQuad({x0,y0,z0},{x1,y0,z0},{x1,y0,z1},{x0,y0,z1},{0,-1,0},color);
+    addQuad({x0,y0,z1},{x1,y0,z1},{x1,y1,z1},{x0,y1,z1},{0,0,1},m);
+    addQuad({x1,y0,z0},{x0,y0,z0},{x0,y1,z0},{x1,y1,z0},{0,0,-1},m);
+    addQuad({x1,y0,z1},{x1,y0,z0},{x1,y1,z0},{x1,y1,z1},{1,0,0},m);
+    addQuad({x0,y0,z0},{x0,y0,z1},{x0,y1,z1},{x0,y1,z0},{-1,0,0},m);
+    addQuad({x0,y1,z1},{x1,y1,z1},{x1,y1,z0},{x0,y1,z0},{0,1,0},m);
+    addQuad({x0,y0,z0},{x1,y0,z0},{x1,y0,z1},{x0,y0,z1},{0,-1,0},m);
 }
-void cylinder(float x,float y,float z,float rx,float height,float rz,Color color,int segments=36) {
+// Axis-aligned box from two opposite corners - convenient for architecture.
+void block(float x0,float y0,float z0,float x1,float y1,float z1,const Material& m) {
+    box((x0+x1)/2,(y0+y1)/2,(z0+z1)/2,std::fabs(x1-x0),std::fabs(y1-y0),std::fabs(z1-z0),m);
+}
+// Vertical tapered cylinder standing on "base" (smooth normals for Phong shading).
+void frustum(Vec3 base,float r0,float r1,float height,const Material& m,int segments=14) {
+    float slope=(r0-r1)/height;
+    for(int i=0;i<segments;++i) {
+        float a=2*PI*i/segments,b=2*PI*(i+1)/segments;
+        Vec3 da{std::cos(a),0,std::sin(a)},db{std::cos(b),0,std::sin(b)};
+        Vec3 p0=base+da*r0,p1=base+db*r0,p2=base+db*r1+Vec3{0,height,0},p3=base+da*r1+Vec3{0,height,0};
+        Vec3 na=normalize({da.x,slope,da.z}),nb=normalize({db.x,slope,db.z});
+        emit(p0,na,m); emit(p2,nb,m); emit(p1,nb,m);
+        emit(p0,na,m); emit(p3,na,m); emit(p2,nb,m);
+        addTriangle(base+Vec3{0,height,0},p2,p3,{0,1,0},m);
+    }
+}
+// Centered elliptical cylinder along Y (kept from the original project API).
+void cylinder(float x,float y,float z,float rx,float height,float rz,const Material& m,int segments=20) {
     float bottom=y-height/2,top=y+height/2;
     for(int i=0;i<segments;++i) {
         float a=2*PI*i/segments,b=2*PI*(i+1)/segments;
-        Vec3 p0{x+rx*std::cos(a),bottom,z+rz*std::sin(a)};
-        Vec3 p1{x+rx*std::cos(b),bottom,z+rz*std::sin(b)};
-        Vec3 p2{x+rx*std::cos(b),top,z+rz*std::sin(b)};
-        Vec3 p3{x+rx*std::cos(a),top,z+rz*std::sin(a)};
-        Vec3 normal=normalize({std::cos((a+b)/2)/rx,0,std::sin((a+b)/2)/rz});
-        addQuad(p1,p0,p3,p2,normal,color);
-        addTriangle({x,top,z},p2,p3,{0,1,0},color);
-        addTriangle({x,bottom,z},p0,p1,{0,-1,0},color);
+        Vec3 p0{x+rx*std::cos(a),bottom,z+rz*std::sin(a)},p1{x+rx*std::cos(b),bottom,z+rz*std::sin(b)};
+        Vec3 p2{x+rx*std::cos(b),top,z+rz*std::sin(b)},p3{x+rx*std::cos(a),top,z+rz*std::sin(a)};
+        Vec3 na=normalize({std::cos(a)/rx,0,std::sin(a)/rz}),nb=normalize({std::cos(b)/rx,0,std::sin(b)/rz});
+        emit(p1,nb,m); emit(p0,na,m); emit(p3,na,m);
+        emit(p1,nb,m); emit(p3,na,m); emit(p2,nb,m);
+        addTriangle({x,top,z},p2,p3,{0,1,0},m);
+        addTriangle({x,bottom,z},p0,p1,{0,-1,0},m);
     }
 }
-void sphere(float x,float y,float z,float radius,Color color,int rings=8,int slices=14) {
+// Cylinder between two arbitrary points: railings, branches, palm trunks.
+void rod(Vec3 a,Vec3 b,float radius,const Material& m,int segments=8) {
+    Vec3 axis=normalize(b-a);
+    Vec3 helper=std::fabs(axis.y)<.95f ? Vec3{0,1,0} : Vec3{1,0,0};
+    Vec3 u=normalize(cross(axis,helper)),v=cross(axis,u);
+    for(int i=0;i<segments;++i) {
+        float t0=2*PI*i/segments,t1=2*PI*(i+1)/segments;
+        Vec3 n0=u*std::cos(t0)+v*std::sin(t0),n1=u*std::cos(t1)+v*std::sin(t1);
+        emit(a+n0*radius,n0,m); emit(a+n1*radius,n1,m); emit(b+n1*radius,n1,m);
+        emit(a+n0*radius,n0,m); emit(b+n1*radius,n1,m); emit(b+n0*radius,n0,m);
+    }
+}
+void sphere(float x,float y,float z,float radius,const Material& m,int rings=8,int slices=14) {
     for(int r=0;r<rings;++r) {
         float p0=-PI/2+PI*r/rings,p1=-PI/2+PI*(r+1)/rings;
         for(int s=0;s<slices;++s) {
@@ -121,52 +243,35 @@ void sphere(float x,float y,float z,float radius,Color color,int rings=8,int sli
             Vec3 n01{std::cos(p0)*std::cos(a1),std::sin(p0),std::cos(p0)*std::sin(a1)};
             Vec3 n11{std::cos(p1)*std::cos(a1),std::sin(p1),std::cos(p1)*std::sin(a1)};
             Vec3 n10{std::cos(p1)*std::cos(a0),std::sin(p1),std::cos(p1)*std::sin(a0)};
-            Vec3 p00{x+n00.x*radius,y+n00.y*radius,z+n00.z*radius};
-            Vec3 p01{x+n01.x*radius,y+n01.y*radius,z+n01.z*radius};
-            Vec3 p11{x+n11.x*radius,y+n11.y*radius,z+n11.z*radius};
-            Vec3 p10{x+n10.x*radius,y+n10.y*radius,z+n10.z*radius};
-            mesh.push_back({p00,n00,color}); mesh.push_back({p01,n01,color}); mesh.push_back({p11,n11,color});
-            mesh.push_back({p00,n00,color}); mesh.push_back({p11,n11,color}); mesh.push_back({p10,n10,color});
+            Vec3 c{x,y,z};
+            emit(c+n00*radius,n00,m); emit(c+n11*radius,n11,m); emit(c+n01*radius,n01,m);
+            emit(c+n00*radius,n00,m); emit(c+n10*radius,n10,m); emit(c+n11*radius,n11,m);
         }
     }
 }
-void annulus(float x,float y,float z,float inner,float outer,Color color) {
-    constexpr int n=64;
-    for(int i=0;i<n;++i) {
-        float a=2*PI*i/n,b=2*PI*(i+1)/n;
-        addQuad({x+inner*std::cos(a),y,z+inner*std::sin(a)},{x+outer*std::cos(a),y,z+outer*std::sin(a)},
-                {x+outer*std::cos(b),y,z+outer*std::sin(b)},{x+inner*std::cos(b),y,z+inner*std::sin(b)},
-                {0,1,0},color);
+// Non-uniformly scaled sphere: exercises the inverse-transpose normal matrix.
+void ellipsoid(Vec3 center,Vec3 radii,const Material& m,int rings=7,int slices=12) {
+    Place p(multiply(translation(center),scaling(radii)));
+    sphere(0,0,0,1,m,rings,slices);
+}
+// Flat ring (or ring sector) lying in the XZ plane.
+void annulus(float x,float y,float z,float inner,float outer,const Material& m,int segments=64,float a0=0,float a1=2*PI) {
+    for(int i=0;i<segments;++i) {
+        float a=a0+(a1-a0)*i/segments,b=a0+(a1-a0)*(i+1)/segments;
+        addQuad({x+inner*std::cos(a),y,z+inner*std::sin(a)},{x+inner*std::cos(b),y,z+inner*std::sin(b)},
+                {x+outer*std::cos(b),y,z+outer*std::sin(b)},{x+outer*std::cos(a),y,z+outer*std::sin(a)},{0,1,0},m);
     }
 }
-
-const Color white{0.86f,0.89f,0.85f}, brightWhite{0.96f,0.97f,0.93f};
-const Color brick{0.52f,0.20f,0.13f}, brickLight{0.62f,0.29f,0.20f};
-const Color glass{0.12f,0.25f,0.28f}, frame{0.76f,0.80f,0.76f};
-const Color concrete{0.70f,0.69f,0.64f}, grass{0.16f,0.48f,0.16f};
-
-void frontWindow(float x,float y,float z,float w=1.35f,float h=1.55f) {
-    box(x,y,z,w,h,.10f,glass); box(x,y-h*.43f,z+.07f,w,.20f,.12f,brickLight);
-    box(x,y,z+.12f,.07f,h,.05f,frame); box(x,y,z+.12f,w,.06f,.05f,frame);
-    box(x,y+h*.38f,z+.12f,w,.06f,.05f,frame);
-}
-void sideWindow(float x,float y,float z,float w=1.35f,float h=1.50f) {
-    box(x,y,z,.10f,h,w,glass); box(x+.07f,y-h*.43f,z,.12f,.20f,w,brickLight);
-    box(x+.12f,y,z,.05f,h,.07f,frame); box(x+.12f,y,z,.05f,.06f,w,frame);
-}
-void tree(float x,float z,float scale=1.0f) {
-    cylinder(x,1.35f*scale,z,.16f*scale,2.7f*scale,.16f*scale,{.28f,.16f,.08f},12);
-    sphere(x,3.0f*scale,z,.85f*scale,{.08f,.34f,.10f});
-    sphere(x-.55f*scale,2.75f*scale,z,.60f*scale,{.10f,.42f,.12f});
-    sphere(x+.50f*scale,2.82f*scale,z+.18f*scale,.65f*scale,{.07f,.38f,.10f});
-}
-void shrub(float x,float z,Color color={.10f,.42f,.10f}) {
-    cylinder(x,.35f,z,.08f,.7f,.08f,{.25f,.14f,.06f},8); sphere(x,.85f,z,.55f,color,6,12);
-}
-void steps(float x,float z,float width) {
-    for(int i=0;i<4;++i) box(x,.08f+i*.10f,z-i*.18f,width-i*.25f,.16f,.38f,brightWhite);
+// Straight flight rising towards local -Z; the lowest riser stands at z=front.
+void stair(float x,float front,float width,int steps,float riser,float tread,float baseY,const Material& m) {
+    for(int i=0;i<steps;++i)
+        block(x-width/2,baseY,front-(i+1)*tread,x+width/2,baseY+(i+1)*riser,front-i*tread,m);
 }
 
+// ---------------------------------------------------------------------------
+// Lettering: 5x5 block glyphs, and a stylised Bengali line (continuous matra
+// headstroke with hanging strokes) standing in for the Bengali signage.
+// ---------------------------------------------------------------------------
 const char* glyph(char c) {
     switch(c) {
     case 'A': return "0111010001111111000110001";
@@ -174,6 +279,7 @@ const char* glyph(char c) {
     case 'D': return "1111010001100011000111110";
     case 'E': return "1111110000111101000011111";
     case 'F': return "1111110000111101000010000";
+    case 'I': return "1111100100001000010011111";
     case 'K': return "1000110010111001001010001";
     case 'L': return "1000010000100001000011111";
     case 'N': return "1000111001101011001110001";
@@ -185,88 +291,927 @@ const char* glyph(char c) {
     default: return "0000000000000000000000000";
     }
 }
-void textOnFront(const std::string& text,float centerX,float y,float z,float scale) {
-    float total=(text.size()*6-1)*scale,start=centerX-total/2;
-    for(std::size_t k=0;k<text.size();++k) {
-        const char* bits=glyph(text[k]);
-        for(int row=0;row<5;++row) for(int col=0;col<5;++col)
-            if(bits[row*5+col]=='1')
-                box(start+(k*6+col)*scale,y+(4-row)*scale,z,scale*.82f,scale*.82f,.09f,brightWhite);
+std::vector<std::string> latinGlyphs(const std::string& text) {
+    std::vector<std::string> out;
+    for(char c : text) out.push_back(glyph(c));
+    return out;
+}
+std::vector<std::string> bengaliGlyphs(const std::vector<int>& wordLengths,float seed) {
+    std::vector<std::string> out;
+    for(std::size_t w=0;w<wordLengths.size();++w) {
+        if(w>0) out.push_back(glyph(' '));
+        for(int k=0;k<wordLengths[w];++k) {
+            std::string g(25,'0');
+            for(int c=0;c<5;++c) g[c]='1';                                  // matra headstroke
+            float s=seed+w*17.0f+k*3.1f;
+            int stem=hash1(s)<.6f ? 3 : 1;
+            for(int r=1;r<5;++r) g[r*5+stem]='1';
+            for(int r=1;r<5;++r) for(int c=0;c<5;++c)
+                if(c!=stem && hash1(s+r*7.3f+c*1.9f)>.68f) g[r*5+c]='1';
+            out.push_back(g);
+        }
     }
+    return out;
+}
+// Text on a local facade plane (+Z outward), centred on centerX.
+void flatText(const std::vector<std::string>& glyphs,float centerX,float y,float z,float sx,float sy,float depth,const Material& m) {
+    float start=centerX-(glyphs.size()*6-1)*sx/2;
+    for(std::size_t k=0;k<glyphs.size();++k)
+        for(int row=0;row<5;++row) for(int col=0;col<5;++col)
+            if(glyphs[k][row*5+col]=='1') {
+                float x=start+(k*6+col)*sx,yy=y+(4-row)*sy;
+                block(x,yy,z,x+sx*.86f,yy+sy*.86f,z+depth,m);
+            }
+}
+
+// ---------------------------------------------------------------------------
+// Architectural constants (section 11 starting proportions)
+// ---------------------------------------------------------------------------
+constexpr float PLINTH=.45f;        // raised walkway / ground-floor level above the lawn
+constexpr float STOREY=3.45f;       // two-level wings: roof slab underside at 7.35
+constexpr float STOREY_TALL=3.6f;   // taller three-level block: roof underside at 11.25
+constexpr float SLAB=.45f;          // visible roof slab/fascia depth
+
+// ---------------------------------------------------------------------------
+// Reusable components (all in a local facade frame: facade plane z=0,
+// outward +Z, running along +X, y measured from the ground).
+// ---------------------------------------------------------------------------
+
+// WindowBay: brick panel, projecting brick sill, framed glazing with dense
+// security bars, a concrete transom band and a short transom light above.
+void windowBay(float x,float floorY,float w,float seed,bool transom=true) {
+    float x0=x-w/2,x1=x+w/2;
+    block(x0,floorY,-.34f,x1,floorY+.80f,-.12f,brickLight);
+    block(x0-.05f,floorY+.80f,-.30f,x1+.05f,floorY+.90f,.06f,brick);
+    float g0=floorY+.90f,g1=floorY+2.36f;
+    int panes=w>1.55f ? 3 : 2;
+    for(int i=0;i<panes;++i)
+        block(x0+w*i/panes,g0,-.31f,x0+w*(i+1)/panes,g1,-.27f,glassFor(seed+i*7.3f));
+    block(x0,g0,-.27f,x1,g0+.05f,-.21f,metal); block(x0,g1-.05f,-.27f,x1,g1,-.21f,metal);
+    for(int i=0;i<=panes;++i) { float mx=x0+w*i/panes; block(mx-.03f,g0,-.27f,mx+.03f,g1,-.21f,metal); }
+    int bars=std::max(4,static_cast<int>(w/.11f));
+    for(int k=1;k<bars;++k) { float bx=x0+w*k/bars; block(bx-.009f,g0,-.20f,bx+.009f,g1,-.18f,metal); }
+    for(float hy : {g0+.36f,g0+.73f,g0+1.10f}) block(x0,hy-.012f,-.20f,x1,hy+.012f,-.18f,metal);
+    block(x0,g1,-.36f,x1,g1+.16f,-.04f,concrete);
+    if(!transom) return;
+    float t0=g1+.16f,t1=floorY+3.0f;
+    for(int i=0;i<panes;++i)
+        block(x0+w*i/panes,t0,-.31f,x0+w*(i+1)/panes,t1,-.27f,glassFor(seed+i*3.7f+40.0f));
+    for(int i=0;i<=panes;++i) { float mx=x0+w*i/panes; block(mx-.03f,t0,-.27f,mx+.03f,t1,-.21f,metal); }
+    for(int k=1;k<bars;k+=2) { float bx=x0+w*k/bars; block(bx-.009f,t0,-.20f,bx+.009f,t1,-.18f,metal); }
+}
+
+// ACUnit: outdoor compressor on steel brackets with a refrigerant pipe.
+void acUnit(float x,float y,float z) {
+    block(x-.42f,y,z,x+.42f,y+.58f,z+.30f,acBody);
+    { Place p(multiply(translation({x-.08f,y+.29f,z+.305f}),rotationX(PI/2)));
+      cylinder(0,0,0,.21f,.015f,.21f,metalDark,16); }
+    block(x+.26f,y+.08f,z+.30f,x+.38f,y+.50f,z+.31f,metalDark);
+    for(float bx : {x-.34f,x+.34f}) block(bx-.02f,y-.05f,z-.25f,bx+.02f,y,z+.34f,metalDark);
+    rod({x+.30f,y+.40f,z+.05f},{x+.48f,y+1.55f,z-.10f},.018f,trim,6);
+}
+
+void door(float x,float floorY,float seed,float w=1.0f,float h=2.3f) {
+    block(x-w/2-.08f,floorY,-.36f,x-w/2,floorY+h+.08f,-.26f,trim);
+    block(x+w/2,floorY,-.36f,x+w/2+.08f,floorY+h+.08f,-.26f,trim);
+    block(x-w/2,floorY+h,-.36f,x+w/2,floorY+h+.08f,-.26f,trim);
+    block(x-w/2,floorY,-.34f,x+w/2,floorY+h,-.29f,wood);
+    for(int k=1;k<3;++k) block(x-w/2,floorY+h*k/3-.02f,-.29f,x+w/2,floorY+h*k/3+.02f,-.28f,woodGroove);
+    block(x+w/2-.16f,floorY+1.0f,-.29f,x+w/2-.10f,floorY+1.1f,-.25f,metal);
+    block(x-w/2,floorY+h+.08f,-.31f,x+w/2,floorY+2.95f,-.28f,glassFor(seed+11.0f));
+}
+
+// BalconyPanel: pale solid parapet, long brick inset and two thin metal rails.
+void balconyPanel(float x0,float x1,float floorY) {
+    block(x0,floorY,-.22f,x1,floorY+.80f,0,concrete);
+    block(x0+.32f,floorY+.22f,-.06f,x1-.32f,floorY+.60f,.02f,brickLight);
+    block(x0-.02f,floorY+.80f,-.25f,x1+.02f,floorY+.86f,.03f,trim);
+    for(float y : {floorY+1.0f,floorY+1.12f}) rod({x0,y,-.1f},{x1,y,-.1f},.018f,metal,6);
+    int posts=std::max(2,static_cast<int>((x1-x0)/1.2f)+1);
+    for(int i=0;i<posts;++i) {
+        float x=x0+.1f+(x1-x0-.2f)*i/(posts-1);
+        rod({x,floorY+.86f,-.1f},{x,floorY+1.14f,-.1f},.02f,metal,6);
+    }
+}
+
+// Projecting rectangular concrete frame in front of an upper corridor.
+void openFrame(float x0,float x1,float y0,float y1,float front) {
+    const float t=.42f;
+    block(x0,y0,front-t,x0+t,y1,front,trim); block(x1-t,y0,front-t,x1,y1,front,trim);
+    block(x0,y1-.5f,-.3f,x0+t,y1,front,trim); block(x1-t,y1-.5f,-.3f,x1,y1,front,trim);
+    block(x0,y1-.5f,front-t,x1,y1,front,trim);
+    block(x0,y0,front-t,x1,y0+.32f,front,trim);
+    block(x0,y0,.3f,x0+t,y0+.32f,front,trim); block(x1-t,y0,.3f,x1,y0+.32f,front,trim);
+}
+
+// Windowed wing: structural bays with large piers, several windows per bay,
+// floor beams, a deep projecting roof slab and a raised walkway.
+struct WindowWing {
+    int bays; float bay; int levels; float storey; int perBay;
+    float overhang; bool freeColumns; bool acUnits; bool skipGround; bool walkway;
+};
+void windowedWing(const WindowWing& s,float seed) {
+    const float length=s.bays*s.bay,top=PLINTH+s.levels*s.storey;
+    block(0,PLINTH,-.75f,length,top,-.34f,concrete);
+    if(s.walkway) {
+        block(-.3f,0,-.75f,length+.3f,PLINTH,s.overhang-.5f,walkway);
+        block(-.3f,0,s.overhang-.5f,length+.3f,PLINTH+.004f,s.overhang-.35f,darkTile);
+        for(int b : {1,s.bays-2}) if(b>=0&&b<s.bays)
+            stair(b*s.bay+s.bay/2,s.overhang-.35f+.9f,2.4f,3,.15f,.30f,0,trim);
+    }
+    const float w=(s.bay-.6f-(s.perBay-1)*.22f)/s.perBay;
+    for(int l=0;l<s.levels;++l) {
+        float f=PLINTH+l*s.storey,bandTop=l==s.levels-1 ? top : f+s.storey;
+        block(0,f+3.0f,-.42f,length,bandTop,.12f,concrete);
+        for(int b=0;b<s.bays;++b) for(int k=0;k<s.perBay;++k) {
+            float cx=b*s.bay+.3f+w/2+k*(w+.22f);
+            if(s.skipGround&&l==0) continue;
+            if(k>0) block(cx-w/2-.22f,f,-.42f,cx-w/2,f+3.0f,.04f,concrete);
+            float id=seed+l*37.0f+b*5.0f+k;
+            windowBay(cx,f,w,id);
+            if(s.acUnits&&l==s.levels-1&&hash1(id*.7f)<.5f)
+                acUnit(cx+(hash1(id+.5f)<.5f ? -.25f : .25f),f+.12f,-.10f);
+        }
+    }
+    for(int b=0;b<=s.bays;++b) block(b*s.bay-.3f,0,-.45f,b*s.bay+.3f,top,.38f,concrete);
+    block(-.4f,top,-1.0f,length+.4f,top+SLAB,s.overhang,trim);
+    block(-.4f,top-.18f,s.overhang-.28f,length+.4f,top,s.overhang,trim);
+    for(int b=0;b<s.bays;++b) cylinder(b*s.bay+s.bay/2,top-.07f,s.overhang*.55f,.08f,.14f,.08f,lampBlack,10);
+    if(s.freeColumns)
+        for(int b=0;b<=s.bays;++b) box(b*s.bay,(PLINTH+top)/2,s.overhang-.9f,.56f,top-PLINTH,.56f,trim);
+}
+
+// Gallery wing: open ground corridor and upper balcony corridors in front of
+// the room wall (courtyard frontage of the stage wing and the taller block).
+struct Gallery {
+    int bays; float bay; int levels; float storey; float depth;
+    unsigned frames; unsigned passages; unsigned voids; bool tileAccents; float frameBase;
+};
+void galleryWing(const Gallery& s,float seed) {
+    const float length=s.bays*s.bay,top=PLINTH+s.levels*s.storey;
+    block(-.3f,0,-s.depth-.1f,length+.3f,PLINTH,.45f,walkway);
+    block(-.3f,0,.30f,length+.3f,PLINTH+.004f,.45f,darkTile);
+    if(s.tileAccents)
+        for(int i=0;i<static_cast<int>(length/2.2f);++i) {
+            float x=hash1(seed+i*1.7f)*(length-.6f),z=-hash1(seed+i*2.9f)*(s.depth-.6f)-.6f;
+            block(x,PLINTH,z,x+.58f,PLINTH+.004f,z+.58f,darkTile);
+        }
+    {   Place back(translation({0,0,-s.depth}));
+        for(int l=0;l<s.levels;++l) for(int b=0;b<s.bays;++b) {
+            float f=PLINTH+l*s.storey,bx=b*s.bay;
+            if((s.voids>>b&1u)||(l==0&&(s.passages>>b&1u))) continue;
+            block(bx,f,-.75f,bx+s.bay,f+s.storey,-.34f,concrete);
+            block(bx,f+3.0f,-.42f,bx+s.bay,f+s.storey,0,concrete);
+            block(bx-.18f,f,-.42f,bx+.18f,f+3.0f,.02f,concrete);
+            door(bx+.95f,f,seed+b+l*9.0f);
+            float w=std::min(2.2f,s.bay-2.3f);
+            block(bx+1.52f,f,-.42f,bx+1.75f,f+3.0f,.02f,concrete);
+            windowBay(bx+1.75f+(s.bay-1.75f)/2,f,w,seed+b*3.0f+l*13.0f);
+        }
+    }
+    for(int l=1;l<s.levels;++l) {
+        float f=PLINTH+l*s.storey;
+        block(-.3f,f-.32f,-s.depth,length+.3f,f,.30f,concrete);
+        Place p(translation({0,0,.30f}));
+        for(int b=0;b<s.bays;++b) balconyPanel(b*s.bay+.3f,(b+1)*s.bay-.3f,f);
+    }
+    for(int l=0;l<s.levels;++l) {
+        float ceiling=l==s.levels-1 ? top : PLINTH+(l+1)*s.storey-.32f;
+        for(int b=0;b<=s.bays;++b) block(b*s.bay-.14f,ceiling-.42f,-s.depth,b*s.bay+.14f,ceiling,.2f,concrete);
+        for(int b=0;b<s.bays;++b) {
+            float cx=b*s.bay+s.bay/2;
+            cylinder(cx,ceiling-.1f,-s.depth*.45f,.09f,.18f,.09f,lampBlack,12);
+            block(cx-.6f,ceiling-.05f,-s.depth+.35f,cx+.6f,ceiling,-s.depth+.43f,lampWhite);
+        }
+    }
+    for(int b=0;b<=s.bays;++b) block(b*s.bay-.28f,PLINTH,-.28f,b*s.bay+.28f,top,.28f,concrete);
+    block(-.4f,top,-s.depth-1.0f,length+.4f,top+SLAB,1.0f,trim);
+    for(int b=0;b<s.bays;++b)
+        if(s.frames>>b&1u) openFrame(b*s.bay+.15f,(b+1)*s.bay-.15f,s.frameBase,top+.9f,1.7f);
+}
+
+// ---------------------------------------------------------------------------
+// Landscape components
+// ---------------------------------------------------------------------------
+void paintedBand(Vec3 base,float radius) {
+    frustum(base,radius+.012f,radius*.96f+.012f,1.0f,whitePaint,12);
+    frustum(base+Vec3{0,1.0f,0},radius*.96f+.014f,radius*.95f+.014f,.15f,redPaint,12);
+}
+void broadleafTree(float x,float z,float height,float spread,float seed,bool painted=true) {
+    const float trunk=height*.5f,r=.10f+.018f*height;
+    frustum({x,0,z},r,r*.7f,trunk+.3f,bark,12);
+    if(painted) paintedBand({x,0,z},r);
+    int branches=3+static_cast<int>(hash1(seed)*3);
+    for(int k=0;k<branches;++k) {
+        float a=2*PI*(k+hash1(seed+k))/branches;
+        Vec3 tip{x+std::cos(a)*spread*.5f,trunk+spread*(.35f+.3f*hash1(seed+k*3.0f)),z+std::sin(a)*spread*.5f};
+        rod({x,trunk*.85f,z},tip,r*.42f,bark,6);
+    }
+    int blobs=8+static_cast<int>(hash1(seed+1)*5);
+    for(int k=0;k<blobs;++k) {
+        float a=hash1(seed+k*4.1f)*2*PI,d=hash1(seed+k*5.3f)*spread*.55f;
+        float y=trunk+spread*(.45f+.45f*hash1(seed+k*6.7f));
+        float rad=spread*(.28f+.18f*hash1(seed+k*7.9f));
+        ellipsoid({x+std::cos(a)*d,y,z+std::sin(a)*d},{rad,rad*.72f,rad},leafMaterial(seed+k),6,11);
+    }
+}
+// Palm frond: arched rachis with narrow drooping leaflet triangles.
+void frond(Vec3 start,float azimuth,float len,float lift,float leaflet,const Material& m) {
+    Vec3 h{std::cos(azimuth),0,std::sin(azimuth)},side{-std::sin(azimuth),0,std::cos(azimuth)};
+    auto at=[&](float t) { return start+h*(len*t)+Vec3{0,len*(lift*t-(lift+.55f)*t*t),0}; };
+    const int n=10;
+    for(int i=0;i<n;++i) {
+        float t0=static_cast<float>(i)/n,t1=static_cast<float>(i+1)/n;
+        Vec3 p0=at(t0),p1=at(t1),mid=lerp(p0,p1,.5f);
+        float w=leaflet*(.35f+.65f*std::sin(PI*(t0*.8f+.15f)));
+        Vec3 along=(p1-p0)*1.3f,droop{0,-w*.55f,0};
+        for(float sgn : {-1.0f,1.0f}) {
+            addTriangle(p0,mid,p0+side*(w*sgn)+along+droop,m);
+            addTriangle(mid,p1,mid+side*(w*sgn)+along+droop,m);
+        }
+        rod(p0,p1,.025f*(1.2f-t0),m,4);
+    }
+}
+void coconutPalm(float x,float z,float height,float leanDeg,float leanDir,float seed,bool painted=true) {
+    Vec3 base{x,0,z},dir{std::cos(leanDir),0,std::sin(leanDir)};
+    float lean=std::tan(radians(leanDeg))*height;
+    auto trunkAt=[&](float t) { return base+Vec3{0,height*t,0}+dir*(lean*t*t); };
+    const int segs=10;
+    for(int i=0;i<segs;++i) {
+        float t=static_cast<float>(i)/segs;
+        rod(trunkAt(t),trunkAt(t+1.0f/segs),.19f-.07f*t,palmBark,9);
+    }
+    if(painted) {
+        rod(trunkAt(0),trunkAt(1.0f/height),.205f,whitePaint,10);
+        rod(trunkAt(1.0f/height),trunkAt(1.15f/height),.207f,redPaint,10);
+    }
+    Vec3 top=trunkAt(1);
+    sphere(top.x,top.y-.1f,top.z,.28f,{{.30f,.32f,.12f}},6,10);
+    for(int k=0;k<5;++k) {
+        float a=2*PI*k/5;
+        sphere(top.x+std::cos(a)*.25f,top.y-.35f,top.z+std::sin(a)*.25f,.13f,{{.42f,.40f,.12f},.2f},5,8);
+    }
+    const int fronds=15;
+    for(int k=0;k<fronds;++k) {
+        float az=2*PI*(k+hash1(seed+k)*.6f)/fronds;
+        float lift=k%3==0 ? .75f : (k%3==1 ? .35f : .05f);
+        frond(top,az,3.0f+hash1(seed+k*2.0f)*1.2f,lift,.75f,leafMaterial(seed+k*1.3f,.1f));
+    }
+}
+// Fan-leaved palm: petioles carrying pleated circular fans.
+void fanPalm(float x,float z,float height,float seed) {
+    frustum({x,0,z},.24f,.20f,height,palmBark,12);
+    paintedBand({x,0,z},.24f);
+    Vec3 top{x,height,z};
+    const int leaves=14;
+    for(int k=0;k<leaves;++k) {
+        float az=2*PI*(k+hash1(seed+k))/leaves,el=radians(-10.0f+60.0f*hash1(seed+k*3.0f));
+        Vec3 h{std::cos(az)*std::cos(el),std::sin(el),std::sin(az)*std::cos(el)};
+        Vec3 c=top+h*1.4f;
+        rod(top,c,.03f,palmBark,4);
+        Vec3 side=normalize(cross(h,{0,1,0})),up=normalize(cross(side,h));
+        Material leaf=leafMaterial(seed+k*.9f,.05f);
+        const int ribs=12; const float radius=1.25f;
+        for(int i=0;i<ribs;++i) {
+            float a0=-1.2f+2.4f*i/ribs,a1=-1.2f+2.4f*(i+1)/ribs;
+            Vec3 d0=h*std::cos(a0)+side*std::sin(a0),d1=h*std::cos(a1)+side*std::sin(a1);
+            Vec3 pleat=up*(i%2 ? .08f : -.08f);
+            addTriangle(c,c+d0*radius+pleat-up*.25f,c+d1*radius-pleat-up*.25f,leaf);
+        }
+    }
+}
+void arecaPalm(float x,float z,float seed) {
+    for(int s=0;s<4;++s) {
+        float a=2*PI*s/4+hash1(seed+s),h=2.0f+hash1(seed+s*3.0f)*1.2f;
+        Vec3 b{x+std::cos(a)*.15f,0,z+std::sin(a)*.15f},t=b+Vec3{std::cos(a)*.35f,h,std::sin(a)*.35f};
+        rod(b,t,.045f,{{.52f,.55f,.30f}},6);
+        for(int k=0;k<6;++k)
+            frond(t,2*PI*k/6+a,1.5f,.9f,.35f,leafMaterial(seed+s*5.0f+k,.2f));
+    }
+}
+void araucaria(float x,float z,float height,float seed) {
+    frustum({x,0,z},.16f,.06f,height,bark,10);
+    paintedBand({x,0,z},.16f);
+    const int tiers=9;
+    for(int t=0;t<tiers;++t) {
+        float y=1.6f+t*(height-1.9f)/tiers,r=1.5f*(1.0f-static_cast<float>(t)/tiers)+.25f;
+        for(int k=0;k<5;++k) {
+            float a=2*PI*(k+hash1(seed+t*5.0f+k))/5;
+            ellipsoid({x+std::cos(a)*r*.55f,y,z+std::sin(a)*r*.55f},{r*.55f,.22f,r*.55f},leafMaterial(seed+t+k,-.2f),5,9);
+        }
+    }
+}
+void shrub(float x,float z,float radius,float seed,bool flowering=false) {
+    for(int k=0;k<3;++k) {
+        float a=2*PI*k/3+hash1(seed+k);
+        ellipsoid({x+std::cos(a)*radius*.35f,radius*.8f,z+std::sin(a)*radius*.35f},{radius*.75f,radius*.7f,radius*.75f},leafMaterial(seed+k,.05f),6,10);
+    }
+    if(!flowering) return;
+    for(int k=0;k<9;++k) {
+        float a=hash1(seed+k*1.1f)*2*PI,e=hash1(seed+k*2.3f)*1.2f;
+        sphere(x+std::cos(a)*std::cos(e)*radius*1.05f,radius*.8f+std::sin(e)*radius*.9f,z+std::sin(a)*std::cos(e)*radius*1.05f,.10f,{{.86f,.12f,.10f},.2f},4,6);
+    }
+}
+// Croton-like ornamental foliage (red, orange and yellow leaves).
+void croton(float x,float z,float seed) {
+    rod({x,0,z},{x,.5f,z},.03f,bark,5);
+    const Color tones[3]={{.70f,.14f,.07f},{.82f,.40f,.08f},{.78f,.62f,.12f}};
+    for(int k=0;k<5;++k) {
+        float a=2*PI*k/5+hash1(seed+k);
+        ellipsoid({x+std::cos(a)*.22f,.55f+hash1(seed+k*2.0f)*.35f,z+std::sin(a)*.22f},{.30f,.18f,.30f},{tones[(k+static_cast<int>(seed))%3],.2f,NATURAL},5,8);
+    }
+}
+void hedge(Vec3 a,Vec3 b,float height,float width,float seed) {
+    float len=length(b-a); int n=std::max(1,static_cast<int>(len/.8f));
+    for(int i=0;i<=n;++i) {
+        Vec3 p=lerp(a,b,static_cast<float>(i)/n);
+        float h=height*(.85f+.3f*hash1(seed+i));
+        ellipsoid({p.x,h*.55f,p.z},{width*.6f,h*.55f,width*.6f},leafMaterial(seed+i*.37f,.25f),5,9);
+    }
+}
+
+// Gazebo: bamboo posts, low woven panels, lattice band and hipped thatch roof.
+void gazebo(float x,float z,float yaw) {
+    Place p(trs({x,0,z},yaw));
+    const float hx=2.3f,hz=1.8f;
+    block(-hx-.2f,0,-hz-.2f,hx+.2f,.30f,hz+.2f,brickLight);
+    for(float px : {-hx,-hx/3,hx/3,hx}) for(float pz : {-hz,hz}) {
+        rod({px-.05f,.3f,pz},{px-.05f,2.45f,pz},.055f,bamboo,6);
+        rod({px+.06f,.3f,pz},{px+.06f,2.45f,pz},.05f,bamboo,6);
+    }
+    for(float px : {-hx,hx}) rod({px,.3f,0},{px,2.45f,0},.055f,bamboo,6);
+    auto side=[&](Vec3 a,Vec3 b,bool entrance) {
+        Vec3 d=b-a; float len=length(d); Vec3 u=d*(1.0f/len);
+        for(int seg=0;seg<3;++seg) {
+            if(entrance&&seg==1) continue;
+            Vec3 s0=a+u*(len*seg/3),s1=a+u*(len*(seg+1)/3);
+            addQuad(s0+Vec3{0,.3f,0},s1+Vec3{0,.3f,0},s1+Vec3{0,.95f,0},s0+Vec3{0,.95f,0},{{.70f,.55f,.32f},.05f,THATCH});
+            for(int k=0;k<7;++k) {
+                Vec3 q0=lerp(s0,s1,k/7.0f),q1=lerp(s0,s1,(k+1)/7.0f);
+                rod(q0+Vec3{0,.95f,0},q1+Vec3{0,1.25f,0},.018f,bamboo,4);
+                rod(q1+Vec3{0,.95f,0},q0+Vec3{0,1.25f,0},.018f,bamboo,4);
+            }
+            rod(s0+Vec3{0,1.27f,0},s1+Vec3{0,1.27f,0},.035f,bamboo,6);
+            rod(s0+Vec3{0,.95f,0},s1+Vec3{0,.95f,0},.03f,bamboo,6);
+        }
+    };
+    side({-hx,0,hz},{hx,0,hz},true); side({hx,0,-hz},{-hx,0,-hz},false);
+    side({-hx,0,-hz},{-hx,0,hz},false); side({hx,0,hz},{hx,0,-hz},false);
+    for(float y : {2.40f,2.30f}) {
+        rod({-hx,y,-hz},{hx,y,-hz},.05f,bamboo,6); rod({-hx,y,hz},{hx,y,hz},.05f,bamboo,6);
+        rod({-hx,y,-hz},{-hx,y,hz},.05f,bamboo,6); rod({hx,y,-hz},{hx,y,hz},.05f,bamboo,6);
+    }
+    // Hipped thatch roof in three slightly offset layers for a shaggy edge.
+    for(int layer=0;layer<3;++layer) {
+        float o=layer*.12f,ey=2.35f+layer*.10f,ex=hx+.85f-o,ez=hz+.85f-o,ry=3.95f,rx=1.05f;
+        Material m{mix(thatch.color,{.50f,.37f,.22f},layer*.35f),.02f,THATCH};
+        Vec3 a{-ex,ey,ez},b{ex,ey,ez},c{ex,ey,-ez},d{-ex,ey,-ez},r0{-rx,ry,0},r1{rx,ry,0};
+        addQuad(a,b,r1,r0,m); addQuad(c,d,r0,r1,m);
+        addTriangle(b,c,r1,m); addTriangle(d,a,r0,m);
+    }
+    block(-hx-.95f,2.25f,hz+.80f,hx+.95f,2.40f,hz+.95f,thatch);
+    block(-hx-.95f,2.25f,-hz-.95f,hx+.95f,2.40f,-hz-.80f,thatch);
+    block(-hx-.95f,2.25f,-hz-.95f,-hx-.80f,2.40f,hz+.95f,thatch);
+    block(hx+.80f,2.25f,-hz-.95f,hx+.95f,2.40f,hz+.95f,thatch);
+    rod({-1.1f,3.97f,0},{1.1f,3.97f,0},.08f,{{.45f,.34f,.20f}},6);
+}
+
+// ---------------------------------------------------------------------------
+// Site: lawn, plaza with alpona artwork, roads, paths and drains
+// ---------------------------------------------------------------------------
+void petalRing(float cx,float cz,float y,float r0,float r1,int count,float halfAngle,const Material& a,const Material& b,float phase=0) {
+    for(int k=0;k<count;++k) {
+        float c=phase+2*PI*k/count; const Material& m=k%2 ? b : a;
+        const int n=6;
+        for(int i=0;i<n;++i) {
+            float t0=static_cast<float>(i)/n,t1=static_cast<float>(i+1)/n;
+            float w0=halfAngle*std::sin(PI*(t0*.9f+.05f)),w1=halfAngle*std::sin(PI*(t1*.9f+.05f));
+            float ra=r0+(r1-r0)*t0,rb=r0+(r1-r0)*t1;
+            Vec3 p0{cx+ra*std::cos(c-w0),y,cz+ra*std::sin(c-w0)},p1{cx+ra*std::cos(c+w0),y,cz+ra*std::sin(c+w0)};
+            Vec3 p2{cx+rb*std::cos(c+w1),y,cz+rb*std::sin(c+w1)},p3{cx+rb*std::cos(c-w1),y,cz+rb*std::sin(c-w1)};
+            addQuad(p0,p1,p2,p3,{0,1,0},m);
+        }
+    }
+}
+// Circular multicoloured alpona in front of the entrance (photos 23, 26, 30).
+void alpona(float cx,float cz) {
+    const float y=.028f;
+    const Material white{{.93f,.92f,.86f}},green{{.30f,.60f,.30f}},yellow{{.93f,.80f,.22f}},blue{{.20f,.42f,.78f}},
+                   red{{.80f,.22f,.18f}},pink{{.90f,.50f,.55f}},orange{{.92f,.52f,.18f}},cream{{.90f,.86f,.66f}};
+    annulus(cx,y,cz,5.75f,6.05f,cream,96);
+    for(int k=0;k<40;++k) { float a=2*PI*k/40; annulus(cx+6.35f*std::cos(a),y,cz+6.35f*std::sin(a),.12f,.20f,white,12); }
+    annulus(cx,y,cz,4.9f,5.75f,green,96);
+    petalRing(cx,cz,y+.004f,4.95f,5.7f,24,.10f,yellow,blue);
+    annulus(cx,y,cz,4.45f,4.9f,red,96);
+    annulus(cx,y,cz,3.5f,4.45f,yellow,96);
+    petalRing(cx,cz,y+.004f,3.55f,4.4f,20,.13f,orange,red,.08f);
+    annulus(cx,y,cz,3.1f,3.5f,blue,96);
+    annulus(cx,y,cz,2.1f,3.1f,cream,80);
+    petalRing(cx,cz,y+.004f,2.15f,3.05f,16,.17f,red,yellow);
+    annulus(cx,y,cz,1.25f,2.1f,green,64);
+    petalRing(cx,cz,y+.004f,1.3f,2.05f,12,.22f,white,yellow,.2f);
+    annulus(cx,y,cz,0,1.25f,pink,48);
+    petalRing(cx,cz,y+.004f,.15f,1.2f,8,.35f,red,orange);
+}
+void site() {
+    addQuad({-130,0,95},{130,0,95},{130,0,-140},{-130,0,-140},{0,1,0},grass);
+    // Front plaza: terracotta pavers with small tan square groups.
+    addQuad({-8,.02f,27},{9.5f,.02f,27},{9.5f,.02f,3.2f},{-8,.02f,3.2f},{0,1,0},paving);
+    addQuad({-28,.02f,5},{-8,.02f,5},{-8,.02f,3.2f},{-28,.02f,3.2f},{0,1,0},paving);
+    for(int g=0;g<80;++g) {
+        float gx=-7.5f+hash1(g*3.1f)*16.5f,gz=3.6f+hash1(g*5.7f)*23.0f;
+        float dx=gx-1.2f,dz=gz-12.5f; if(dx*dx+dz*dz<6.9f*6.9f) continue;
+        int type=static_cast<int>(hash1(g*7.3f)*3);
+        for(int i=0;i<4;++i) {
+            float ox=type==0 ? (i%2)*.3f : (type==1 ? i*.3f : (i<3 ? i*.3f : 0.0f));
+            float oz=type==0 ? (i/2)*.3f : (type==1 ? 0.0f : (i<3 ? 0.0f : .3f));
+            addQuad({gx+ox,.03f,gz+oz+.28f},{gx+ox+.28f,.03f,gz+oz+.28f},{gx+ox+.28f,.03f,gz+oz},{gx+ox,.03f,gz+oz},{0,1,0},tanPaver);
+        }
+    }
+    alpona(1.2f,12.5f);
+    // Low brick bed edge between plaza and the curved-facade lawn.
+    block(9.5f,0,3.2f,9.75f,.28f,15.0f,brick);
+    // Campus roads (front E-W and east N-S), concrete with hedges and drains.
+    addQuad({-80,.015f,33},{47,.015f,33},{47,.015f,27},{-80,.015f,27},{0,1,0},road);
+    addQuad({41,.016f,33},{47,.016f,33},{47,.016f,-95},{41,.016f,-95},{0,1,0},road);
+    for(float z=-94.0f;z<26.0f;z+=.35f) {
+        if(z>-33.6f&&z<-19.4f) continue;
+        if(z>14.4f&&z<17.1f) continue;
+        addQuad({40.25f,.02f,z+.25f},{40.75f,.02f,z+.25f},{40.75f,.02f,z},{40.25f,.02f,z},{0,1,0},metalDark);
+    }
+    // Red paver paths: plaza to road, and the cafeteria forecourt.
+    addQuad({9.5f,.022f,17.0f},{41,.022f,17.0f},{41,.022f,14.5f},{9.5f,.022f,14.5f},{0,1,0},paving);
+    addQuad({29,.022f,-19.5f},{41,.022f,-19.5f},{41,.022f,-33.5f},{29,.022f,-33.5f},{0,1,0},paving);
+    for(int g=0;g<30;++g) {
+        float gx=30+hash1(g*9.1f)*10,gz=-33+hash1(g*4.3f)*13;
+        addQuad({gx,.03f,gz+.3f},{gx+.6f,.03f,gz+.3f},{gx+.6f,.03f,gz},{gx,.03f,gz},{0,1,0},tanPaver);
+    }
+    addQuad({-28,.021f,-58},{-24,.021f,-58},{-24,.021f,-62},{-28,.021f,-62},{0,1,0},paving);
+}
+
+// ---------------------------------------------------------------------------
+// Front: long colonnade, main entrance portico and balcony return
+// ---------------------------------------------------------------------------
+void frontWing() {
+    // Continuous raised plinth and broad steps along the whole front.
+    block(-27.5f,0,-4.6f,8.3f,PLINTH,2.2f,walkway);
+    block(-27.5f,0,2.05f,8.3f,PLINTH+.004f,2.2f,darkTile);
+    stair(-9.6f,3.2f,35.8f,3,.15f,.33f,0,trim);
+    // Front-left windowed wing behind double-height free columns (photos 23, 24, 27).
+    { Place p(trs({-27,0,-2.6f},0));
+      windowedWing({5,4.8f,2,STOREY,3,4.5f,true,true,false,false},11.0f); }
+    // Entrance canopy continues to the curved brick volume.
+    const float roofUnder=PLINTH+2*STOREY;
+    block(-2.65f,roofUnder,-10.55f,8.3f,roofUnder+SLAB,1.9f,trim);
+    block(-2.65f,roofUnder-.18f,1.62f,8.3f,roofUnder,1.9f,trim);
+    for(float x : {.2f,3.4f,6.6f}) box(x,(PLINTH+roofUnder)/2,1.0f,.56f,roofUnder-PLINTH,.56f,trim);
+    for(float x : {.2f,3.4f}) box(x,(PLINTH+roofUnder)/2,-3.0f,.50f,roofUnder-PLINTH,.50f,trim);
+    for(float x=-1.5f;x<8.0f;x+=2.4f) for(float z : {-2.0f,.6f}) cylinder(x,roofUnder-.07f,z,.08f,.14f,.08f,lampBlack,10);
+    // Tall warm-brick wall left of the doors.
+    block(-3.0f,PLINTH,-4.8f,-1.1f,roofUnder,-4.3f,warmPanel);
+    // Recessed timber entrance: four leaves with louvered panels above.
+    const float dz=-6.0f;
+    block(-1.1f,PLINTH+3.3f,dz-.3f,3.5f,PLINTH+3.95f,dz+.1f,concrete);
+    for(int leaf=0;leaf<4;++leaf) {
+        float x0=-1.1f+leaf*1.15f,x1=x0+1.15f;
+        block(x0,PLINTH,dz-.2f,x0+.06f,PLINTH+3.3f,dz+.05f,trim);
+        block(x0+.06f,PLINTH,dz-.2f,x1-.03f,PLINTH+2.6f,dz-.05f,wood);
+        for(float gx : {.3f,.57f,.84f}) block(x0+gx,PLINTH+.1f,dz-.05f,x0+gx+.03f,PLINTH+2.5f,dz-.03f,woodGroove);
+        block(x0+.06f,PLINTH+2.6f,dz-.2f,x1-.03f,PLINTH+2.66f,dz,trim);
+        for(int s=0;s<8;++s) block(x0+.08f,PLINTH+2.70f+s*.075f,dz-.15f,x1-.05f,PLINTH+2.73f+s*.075f,dz-.02f,wood);
+    }
+    block(-1.1f,PLINTH,dz-.4f,3.5f,PLINTH+3.3f,dz-.2f,darkGap);
+    block(-1.1f,0,-11.3f,3.5f,PLINTH,-4.6f,walkway);
+    // Upper floor above the doors: the rear balcony edge seen through the portico.
+    block(-1.1f,PLINTH+3.62f,-9.0f,3.5f,PLINTH+3.95f,dz+.1f,concrete);
+    { Place p(translation({0,0,dz+.1f})); balconyPanel(-1.1f,3.5f,PLINTH+3.95f); }
+    block(3.5f,PLINTH,-6.3f,5.5f,PLINTH+3.95f,-5.8f,warmPanel);
+    // Balcony return between the entrance and the curved wall (photos 26, 30).
+    block(5.5f,PLINTH+3.55f,-3.2f,8.3f,PLINTH+3.95f,-.3f,concrete);
+    { Place p(translation({0,0,-.3f})); balconyPanel(5.5f,8.3f,PLINTH+3.95f); }
+    { Place p(translation({0,0,-3.2f}));
+      windowBay(6.9f,PLINTH,1.6f,301.0f); windowBay(6.9f,PLINTH+STOREY,1.6f,302.0f); }
+    // Building masses behind the facades (roofs are the tops of these blocks).
+    block(-26.25f,0,-10.55f,-3.0f,7.8f,-3.35f,concrete);
+    block(-3.0f,0,-10.55f,-1.1f,7.8f,-4.8f,concrete);
+    block(3.5f,0,-10.55f,5.5f,7.8f,-6.3f,concrete);
+    block(5.5f,0,-10.55f,21.25f,7.8f,-3.2f,concrete);
+}
+
+// ---------------------------------------------------------------------------
+// Curved brick SWC facade (section 4): partial arc with a flared left edge,
+// pale bands, louver strips with fins and bilingual lettering.
+// ---------------------------------------------------------------------------
+void curvedBrickFacade() {
+    const Vec3 c{15.0f,0,-4.5f};
+    const float R=7.5f,thick=.40f,thetaL=radians(-68.0f),thetaR=radians(95.0f),flare=radians(12.0f);
+    const float hL=9.4f,hR=8.5f; const int N=60,M=14;
+    auto theta=[&](float u,float y) { float start=thetaL-flare*(y/hL); return start+(thetaR-start)*u; };
+    auto topAt=[&](float u) { return hL+(hR-hL)*u; };
+    auto at=[&](float th,float y,float r) { return Vec3{c.x+r*std::sin(th),y,c.z+r*std::cos(th)}; };
+    auto radial=[](float th) { return Vec3{std::sin(th),0,std::cos(th)}; };
+    auto surface=[&](float r,float sign,const Material& m,float yFrom,float yTo) {
+        for(int i=0;i<N;++i) for(int j=0;j<M;++j) {
+            float u0=static_cast<float>(i)/N,u1=static_cast<float>(i+1)/N;
+            float ya0=yFrom+(std::min(yTo,topAt(u0))-yFrom)*j/M,ya1=yFrom+(std::min(yTo,topAt(u0))-yFrom)*(j+1)/M;
+            float yb0=yFrom+(std::min(yTo,topAt(u1))-yFrom)*j/M,yb1=yFrom+(std::min(yTo,topAt(u1))-yFrom)*(j+1)/M;
+            float t00=theta(u0,ya0),t01=theta(u0,ya1),t10=theta(u1,yb0),t11=theta(u1,yb1);
+            emit(at(t00,ya0,r),radial(t00)*sign,m); emit(at(t10,yb0,r),radial(t10)*sign,m); emit(at(t11,yb1,r),radial(t11)*sign,m);
+            emit(at(t00,ya0,r),radial(t00)*sign,m); emit(at(t11,yb1,r),radial(t11)*sign,m); emit(at(t01,ya1,r),radial(t01)*sign,m);
+        }
+    };
+    surface(R,1,brick,0,99); surface(R-thick,-1,brick,0,99);
+    surface(R+.035f,1,brickDark,0,.55f);
+    for(int i=0;i<N;++i) {
+        float u0=static_cast<float>(i)/N,u1=static_cast<float>(i+1)/N,y0=topAt(u0),y1=topAt(u1);
+        float a=theta(u0,y0),b=theta(u1,y1);
+        addQuad(at(a,y0,R),at(b,y1,R),at(b,y1,R-thick),at(a,y0,R-thick),{0,1,0},trim);
+    }
+    for(int j=0;j<M;++j) {
+        float y0=hL*j/M,y1=hL*(j+1)/M,a=theta(0,y0),b=theta(0,y1);
+        addQuad(at(a,y0,R-thick),at(a,y0,R),at(b,y1,R),at(b,y1,R-thick),{-std::cos(a),0,std::sin(a)},brick);
+        float r0=hR*j/M,r1=hR*(j+1)/M;
+        addQuad(at(thetaR,r0,R),at(thetaR,r0,R-thick),at(thetaR,r1,R-thick),at(thetaR,r1,R),{std::cos(thetaR),0,-std::sin(thetaR)},brick);
+    }
+    // Pale horizontal bands wrapping the curve.
+    for(float yb : {1.0f,3.0f,4.9f,6.9f,8.25f}) for(int i=0;i<N;++i) {
+        float u0=static_cast<float>(i)/N,u1=static_cast<float>(i+1)/N;
+        if(yb+.07f>std::min(topAt(u0),topAt(u1))) continue;
+        float a=theta(u0,yb),b=theta(u1,yb),ro=R+.06f,ri=R-.01f;
+        addQuad(at(a,yb-.07f,ro),at(b,yb-.07f,ro),at(b,yb+.07f,ro),at(a,yb+.07f,ro),radial((a+b)/2),trim);
+        addQuad(at(a,yb+.07f,ro),at(b,yb+.07f,ro),at(b,yb+.07f,ri),at(a,yb+.07f,ri),{0,1,0},trim);
+        addQuad(at(a,yb-.07f,ri),at(b,yb-.07f,ri),at(b,yb-.07f,ro),at(a,yb-.07f,ro),{0,-1,0},trim);
+    }
+    // Tall louver strips with projecting pale fins.
+    for(float deg : {-31.0f,-27.0f,19.0f,62.0f}) {
+        float th=radians(deg);
+        Place p(multiply(translation(at(th,0,R)),rotationY(th)));
+        block(-.30f,1.07f,-.06f,.30f,6.83f,.02f,darkGap);
+        for(float y=1.12f;y<6.8f;y+=.13f) block(-.28f,y,-.02f,.28f,y+.045f,.10f,trim);
+        block(-.40f,.95f,-.02f,-.30f,6.95f,.34f,trim); block(.30f,.95f,-.02f,.40f,6.95f,.34f,trim);
+    }
+    // Bilingual lettering following the arc.
+    auto arcText=[&](const std::vector<std::string>& glyphs,float thetaMid,float y,float sx,float sy,const Material& m) {
+        float total=(glyphs.size()*6-1)*sx;
+        for(std::size_t k=0;k<glyphs.size();++k)
+            for(int col=0;col<5;++col) {
+                float s=-total/2+(k*6+col)*sx+sx*.43f,th=thetaMid+s/R;
+                Place p(multiply(translation(at(th,0,R)),rotationY(th)));
+                for(int row=0;row<5;++row)
+                    if(glyphs[k][row*5+col]=='1')
+                        block(-sx*.43f,y+(4-row)*sy,.0f,sx*.43f,y+(4-row)*sy+sy*.86f,.06f,m);
+            }
+    };
+    const Material letters{{.90f,.90f,.86f},.45f};
+    arcText(latinGlyphs("STUDENT WELFARE CENTER"),radians(-4.0f),5.30f,.036f,.064f,letters);
+    arcText(bengaliGlyphs({6,6,5},9.0f),radians(-4.0f),5.95f,.052f,.078f,letters);
+    // Flat roof hidden inside the curved parapet.
+    for(int i=0;i<N;++i) {
+        float a=theta(static_cast<float>(i)/N,8.0f),b=theta(static_cast<float>(i+1)/N,8.0f);
+        addTriangle({c.x,8.0f,c.z},at(b,8.0f,R-thick),at(a,8.0f,R-thick),{0,1,0},roofMembrane);
+    }
+    // Small canopy slab and column beside the curve (photo 25).
+    block(21.0f,6.55f,-7.0f,24.6f,6.85f,-1.4f,trim);
+    box(24.2f,3.3f,-1.8f,.4f,6.5f,.4f,trim);
+}
+
+// ---------------------------------------------------------------------------
+// Courtyard wings, stage and building masses
+// ---------------------------------------------------------------------------
+void courtyard() {
+    // West: long two-level windowed wing facing the lawn (photos 15, 18, 19).
+    { Place p(trs({-19.5f,0,-14.5f},90));
+      windowedWing({6,4.95f,2,STOREY,3,3.0f,false,true,false,true},21.0f); }
+    // North: stage wing with balcony corridors and projecting frames (13, 14, 21).
+    { Place p(trs({-19.5f,0,-44.3f},0));
+      galleryWing({8,4.6f,2,STOREY,3.2f,0x0Fu,0,0,false,PLINTH+STOREY-.32f},31.0f); }
+    // East: taller three-level corridor block (photos 16, 17, 20, 22).
+    { Place p(trs({17.3f,0,-44.3f},-90));
+      galleryWing({6,29.8f/6,3,STOREY_TALL,3.2f,0x15u,0,0,true,0},41.0f);
+      // Staircase at the far end of the ground corridor (photo 17).
+      Place s(trs({3.6f,0,-1.6f},90));
+      stair(0,0,1.6f,12,.17f,.28f,PLINTH,trim); }
+    // Front wing courtyard corridor; bay 3 is the through-passage from the lobby.
+    { Place p(trs({17.3f,0,-14.5f},180));
+      galleryWing({8,4.6f,2,STOREY,3.2f,0,0,0x08u,true,0},51.0f); }
+    // Overhead slats at the north-west wing junction (photos 16, 19).
+    for(float x=-19.3f;x<-15.6f;x+=.28f) block(x,7.25f,-46.0f,x+.1f,7.45f,-43.2f,trim);
+    // Masses.
+    block(-26.25f,0,-55.25f,-20.25f,7.8f,-3.35f,concrete);
+    block(-26.25f,0,-55.25f,17.3f,7.8f,-48.25f,concrete);
+    block(17.3f,0,-55.25f,21.25f,11.7f,-44.3f,concrete);
+    block(21.25f,0,-20.0f,28.25f,7.8f,-3.75f,concrete);
+    block(21.25f,0,-33.0f,26.5f,11.7f,-20.0f,concrete);
+    block(21.25f,0,-55.25f,25.45f,11.7f,-33.0f,concrete);
+    block(21.25f,0,-20.0f,24.0f,11.7f,-14.5f,concrete);
+    // Roof parapet edges and rooftop stair/water tank housings (photos 21, 22).
+    block(-8.0f,7.8f,-54.0f,-4.0f,10.2f,-50.0f,concrete);
+    block(22.0f,11.7f,-40.0f,25.0f,13.6f,-36.0f,concrete);
+    block(21.8f,13.6f,-40.2f,25.2f,13.8f,-35.8f,trim);
+}
+
+void stage() {
+    const float cx=-9.5f;
+    block(cx-3.8f,0,-44.1f,cx+3.8f,4.95f,-43.5f,brick);
+    block(cx-3.9f,4.95f,-44.15f,cx+3.9f,5.05f,-43.45f,brickDark);
+    // Raised platform: circular segment with a low curved brick edge.
+    const float chordZ=-43.5f,half=5.5f,sag=3.2f,r=(half*half+sag*sag)/(2*sag),centerZ=chordZ+sag-r;
+    const float span=std::asin(half/r),h=.55f; const int n=40;
+    for(int i=0;i<n;++i) {
+        float a=-span+2*span*i/n,b=-span+2*span*(i+1)/n;
+        Vec3 pa{cx+(r-.3f)*std::sin(a),h,centerZ+(r-.3f)*std::cos(a)},pb{cx+(r-.3f)*std::sin(b),h,centerZ+(r-.3f)*std::cos(b)};
+        addTriangle({cx,h,chordZ},pb,pa,{0,1,0},{{.80f,.78f,.72f},.1f});
+        Vec3 oa{cx+r*std::sin(a),0,centerZ+r*std::cos(a)},ob{cx+r*std::sin(b),0,centerZ+r*std::cos(b)};
+        Vec3 ia{cx+(r-.3f)*std::sin(a),0,centerZ+(r-.3f)*std::cos(a)},ib{cx+(r-.3f)*std::sin(b),0,centerZ+(r-.3f)*std::cos(b)};
+        Vec3 up{0,h+.06f,0};
+        addQuad(oa,ob,ob+up,oa+up,{std::sin((a+b)/2),0,std::cos((a+b)/2)},brickLight);
+        addQuad(oa+up,ob+up,ib+up,ia+up,{0,1,0},brickLight);
+    }
+    block(cx-half,0,chordZ-.1f,cx+half,h,chordZ,{{.80f,.78f,.72f},.1f});
+    { Place p(trs({-4.0f,0,-42.3f},90)); stair(0,0,1.8f,3,.18f,.30f,0,trim); }
+}
+
+// ---------------------------------------------------------------------------
+// Exterior elevations, shopfront and cafeteria
+// ---------------------------------------------------------------------------
+void shopfront() {
+    // Local frame of the east facade segment: ground level, x in [0,17].
+    const Material shutter{{.62f,.64f,.63f},.35f},signRed{{.72f,.12f,.12f},.3f},signPurple{{.55f,.20f,.55f},.3f};
+    const float bay=17.0f/3;
+    for(int b=0;b<3;++b) {
+        float x0=b*bay+.4f,x1=(b+1)*bay-.4f;
+        if(b==0) {
+            block(x0,PLINTH,-.36f,x1,PLINTH+2.9f,-.30f,shutter);
+            for(float y=PLINTH+.1f;y<PLINTH+2.9f;y+=.12f) block(x0,y,-.30f,x1,y+.03f,-.28f,metalDark);
+        } else if(b==1) {
+            block(x0,PLINTH,-.40f,x1,PLINTH+2.9f,-.34f,glassFor(9.0f));
+            for(float x=x0;x<=x1+.01f;x+=(x1-x0)/3) block(x-.04f,PLINTH,-.34f,x+.04f,PLINTH+2.9f,-.30f,metal);
+            block(x0+.4f,PLINTH,-.44f,x0+1.0f,PLINTH+1.1f,-.40f,{{.85f,.25f,.25f}});
+        } else {
+            block(x0,PLINTH,-.34f,x1,PLINTH+2.9f,-.32f,darkGap);
+            for(float x=x0;x<x1;x+=.14f) block(x,PLINTH,-.30f,x+.03f,PLINTH+2.9f,-.27f,metal);
+        }
+        block(x0,PLINTH+2.95f,-.34f,x1,PLINTH+3.4f,-.22f,b==1 ? signPurple : signRed);
+        block(x0+.2f,PLINTH+3.0f,-.22f,x1-.2f,PLINTH+3.35f,-.20f,{{.95f,.95f,.92f}});
+        acUnit(x1-.6f,PLINTH+.05f,.10f);
+    }
+    block(12.2f,0,1.8f,14.0f,.6f,2.6f,brickLight);
+    shrub(13.1f,2.2f,.45f,77.0f);
+}
+
+void cafeteria() {
+    // Local frame: x along the facade in [0,13], +Z outward (photo 12).
+    const float f1=PLINTH+STOREY_TALL,f2=PLINTH+2*STOREY_TALL,top=PLINTH+3*STOREY_TALL;
+    // Left windowed section with brick infill.
+    block(0,PLINTH,-.75f,3.2f,top,-.34f,concrete);
+    for(float f : {PLINTH,f1,f2}) {
+        windowBay(1.6f,f,1.9f,500.0f+f);
+        block(0,f+3.0f,-.42f,3.2f,std::min(top,f+STOREY_TALL),.12f,concrete);
+    }
+    block(2.9f,0,-.4f,3.5f,top+SLAB,.9f,trim);                         // tall pier left of entrance
+    // Recessed entrance under the signed canopy.
+    block(3.5f,0,-2.5f,8.8f,PLINTH,.45f,walkway);
+    stair(6.15f,1.35f,5.6f,3,.15f,.30f,0,trim);
+    block(3.5f,PLINTH,-2.9f,8.8f,f1,-2.5f,concrete);
+    block(5.3f,PLINTH,-2.52f,6.9f,PLINTH+2.8f,-2.45f,darkGap);
+    block(5.2f,PLINTH,-2.5f,5.3f,PLINTH+2.9f,-2.4f,wood); block(6.9f,PLINTH,-2.5f,7.0f,PLINTH+2.9f,-2.4f,wood);
+    { Place p(translation({0,0,-2.5f})); windowBay(4.25f,PLINTH,1.2f,510.0f,false); windowBay(7.95f,PLINTH,1.2f,511.0f,false); }
+    block(8.8f,0,-2.9f,9.1f,f1,0,concrete);
+    block(3.3f,f1-.7f,-2.5f,9.1f,f1,1.4f,trim);
+    flatText(latinGlyphs("CAFETERIA"),6.2f,f1-.55f,1.4f,.075f,.085f,.05f,signDark);
+    flatText(bengaliGlyphs({8},23.0f),6.2f,f1+.08f,1.33f,.07f,.07f,.05f,signDark);
+    for(float x=3.4f;x<9.05f;x+=1.1f) rod({x,f1,1.3f},{x,f1+1.05f,1.3f},.025f,metal,6);
+    block(3.4f,f1+.1f,1.24f,9.0f,f1+1.0f,1.28f,clearGlass);
+    rod({3.4f,f1+1.05f,1.3f},{9.0f,f1+1.05f,1.3f},.03f,metal,6);
+    // Upper levels above the entrance: windows and the tall central louver.
+    block(3.5f,f1,-.75f,8.8f,top,-.34f,concrete);
+    for(float f : {f1,f2}) {
+        windowBay(4.3f,f,1.3f,520.0f+f); windowBay(7.95f,f,1.3f,530.0f+f);
+        block(3.5f,f+3.0f,-.42f,8.8f,std::min(top,f+STOREY_TALL),.12f,concrete);
+    }
+    block(5.05f,f1+.3f,-.3f,7.15f,top-.1f,.28f,trim);
+    block(5.2f,f1+.45f,.28f,7.0f,top-.25f,.29f,darkGap);
+    for(float y=f1+.5f;y<top-.3f;y+=.15f) block(5.2f,y,.29f,7.0f,y+.05f,.46f,trim);
+    // Straight external staircase with a brick side wall and planter.
+    const int steps=24; const float riser=f1/steps,tread=.30f,front=7.4f;
+    stair(9.9f,front,1.4f,steps,riser,tread,0,trim);
+    for(int i=0;i<steps;++i)
+        block(10.6f,0,front-(i+1)*tread,10.8f,(i+1)*riser+.9f,front-i*tread,brickLight);
+    rod({9.25f,.9f,front},{9.25f,f1+.9f,front-steps*tread},.025f,metal,6);
+    block(9.1f,f1-.3f,-.6f,12.4f,f1,.3f,concrete);
+    { Place p(trs({12.4f,0,.3f},90)); balconyPanel(0,.9f,f1); }
+    block(9.3f,0,front+.3f,10.6f,.55f,front+1.4f,trim);
+    for(int k=0;k<7;++k) {
+        float a=2*PI*k/7;
+        rod({9.95f,.55f,front+.85f},{9.95f+std::cos(a)*.45f,1.15f,front+.85f+std::sin(a)*.45f},.03f,{{.35f,.55f,.25f}},4);
+    }
+    // Right windowed block and roof.
+    block(10.8f,PLINTH,-.75f,13.0f,top,-.34f,concrete);
+    for(float f : {f1,f2}) windowBay(11.9f,f,1.4f,540.0f+f);
+    { Place p(translation({0,0,-2.0f})); door(11.9f,PLINTH,545.0f,1.1f,2.4f); }
+    block(10.8f,0,-2.5f,13.0f,PLINTH,.45f,walkway);
+    block(12.7f,0,-.4f,13.3f,top+SLAB,.6f,trim);
+    block(-.3f,top,-2.9f,13.3f,top+SLAB,1.0f,trim);
+}
+
+void exteriorElevations() {
+    // West exterior with free columns (photos 1, 2, 3).
+    { Place p(trs({-27,0,-56},-90)); windowedWing({11,53.4f/11,2,STOREY,3,3.4f,true,true,false,true},61.0f); }
+    // North exteriors: two-level wing and three-level block.
+    { Place p(trs({17.3f,0,-56},180)); windowedWing({9,44.3f/9,2,STOREY,3,2.2f,false,true,false,true},71.0f); }
+    { Place p(trs({29,0,-56},180)); windowedWing({2,11.7f/2,3,STOREY_TALL,3,2.2f,false,true,false,true},81.0f); }
+    // Two-level front face beside the curved wall; the tall block starts further north.
+    { Place p(trs({23.0f,0,-3.0f},0)); windowedWing({1,6.0f,2,STOREY,3,1.5f,false,true,false,true},91.0f); }
+    // East exterior: shop/service frontage, cafeteria, taller gallery block (8-12).
+    { Place p(trs({29,0,-3.0f},90));
+      windowedWing({3,17.0f/3,2,STOREY,3,3.0f,false,true,true,true},101.0f);
+      shopfront(); }
+    { Place p(trs({29,0,-20.0f},90)); cafeteria(); }
+    { Place p(trs({29,0,-33.0f},90));
+      galleryWing({4,23.0f/4,3,STOREY_TALL,2.8f,0x06u,0x01u,0,false,PLINTH+STOREY_TALL-.32f},111.0f); }
+    // Angular decorative garden panels (photo 11).
+    for(int k=0;k<4;++k) {
+        Place p(trs({33.0f+k*.2f,0,-40.0f-k*2.3f},20.0f+k*35.0f));
+        addQuad({-.8f,.3f,0},{.8f,.1f,0},{.6f,1.9f,0},{-.5f,2.2f,0},clearGlass);
+        rod({-.8f,0,0},{-.5f,2.2f,0},.03f,metal,5);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Landscaping (placed after the architecture, per section 15)
+// ---------------------------------------------------------------------------
+void landscaping() {
+    // Front left lawn: palms and broadleaf trees behind shrubs and crotons (23, 24, 27).
+    coconutPalm(-23.5f,8.5f,9.5f,6,.4f,1); coconutPalm(-31.0f,5.0f,10.5f,4,2.0f,2);
+    coconutPalm(-13.5f,10.0f,8.0f,8,-.6f,3);
+    broadleafTree(-19.0f,13.0f,7.5f,4.2f,4); broadleafTree(-30.0f,15.5f,8.5f,5.0f,5);
+    broadleafTree(-11.0f,19.0f,5.5f,3.2f,6); broadleafTree(-26.0f,21.0f,6.5f,3.8f,7);
+    for(float x=-26.5f;x<-8.5f;x+=2.2f) {
+        if(static_cast<int>((x+30)/2.2f)%2) croton(x,4.3f,x); else shrub(x,4.3f,.45f,x);
+    }
+    // Curved-facade lawn: areca palm, painted coconut palm, ixora (photo 25).
+    arecaPalm(13.5f,6.5f,11); coconutPalm(20.5f,9.0f,11.0f,3,1.0f,12);
+    block(18.5f,0,7.3f,22.8f,.3f,7.5f,brick); block(22.6f,0,7.3f,22.8f,.3f,11.2f,brick);
+    shrub(10.8f,4.6f,.55f,13,true); shrub(24.5f,4.2f,.6f,14,true); shrub(16.5f,3.9f,.45f,15,true);
+    croton(12.0f,4.2f,16); croton(22.0f,3.8f,17); broadleafTree(27.5f,10.0f,6.0f,3.5f,18);
+    broadleafTree(11.0f,11.0f,3.5f,1.8f,19);
+    // East road edge: hedges, painted trees, gazebo and fan palms (5, 6, 9, 10).
+    hedge({39.3f,0,-92},{39.3f,0,-33.6f},1.0f,1.1f,20); hedge({39.3f,0,-19.4f},{39.3f,0,14.4f},1.0f,1.1f,21);
+    hedge({39.3f,0,17.1f},{39.3f,0,25.5f},1.0f,1.1f,22); hedge({48.2f,0,-92},{48.2f,0,26},1.0f,1.1f,23);
+    hedge({30.5f,0,-35.0f},{38.0f,0,-35.0f},.9f,1.0f,24);
+    for(float z=-85.0f;z<22.0f;z+=9.5f) broadleafTree(49.8f,z,7.0f+hash1(z)*2.0f,4.2f,z);
+    gazebo(35.0f,-40.5f,0);
+    fanPalm(38.0f,-45.5f,5.5f,30); fanPalm(31.5f,-44.5f,4.0f,31);
+    broadleafTree(33.0f,-13.0f,6.5f,3.8f,32); broadleafTree(35.5f,-50.0f,7.5f,4.5f,33);
+    coconutPalm(37.5f,-60.0f,12.0f,3,2.5f,34); broadleafTree(34.0f,-2.0f,5.5f,3.0f,35);
+    shrub(30.8f,-34.3f,.55f,36); shrub(38.2f,-19.0f,.5f,37);
+    // West exterior lawn (photos 1-4).
+    coconutPalm(-35.0f,-5.0f,11.0f,5,3.0f,40); coconutPalm(-37.0f,-19.0f,10.0f,7,3.3f,41);
+    araucaria(-33.0f,-12.0f,9.0f,42); araucaria(-33.5f,-31.0f,8.0f,43); arecaPalm(-32.0f,-24.0f,44);
+    for(int k=0;k<7;++k)
+        broadleafTree(-38.0f-hash1(k*3.3f)*6.0f,-8.0f-k*7.0f,7.0f+hash1(k*1.9f)*3.0f,4.0f+hash1(k*2.7f)*1.5f,50+k);
+    for(int k=0;k<5;++k) broadleafTree(-32.5f,-38.0f-k*4.0f,3.0f,1.5f,60+k);
+    shrub(-31.5f,-16.0f,.5f,66,true); shrub(-31.8f,-41.0f,.45f,67);
+    // North side trees.
+    for(int k=0;k<6;++k) broadleafTree(-20.0f+k*9.0f,-62.0f-hash1(k*5.1f)*5.0f,8.0f,5.0f,70+k);
+    // Courtyard: sparse small trees and flowering shrubs near the edges (13-22).
+    broadleafTree(-14.8f,-18.0f,3.4f,1.6f,80,false); broadleafTree(-14.6f,-38.5f,3.8f,1.8f,81,false);
+    broadleafTree(14.2f,-21.0f,3.2f,1.5f,82,false); broadleafTree(14.5f,-37.0f,3.6f,1.7f,83,false);
+    broadleafTree(-2.0f,-17.0f,3.0f,1.4f,84,false); broadleafTree(7.0f,-42.0f,3.0f,1.4f,85,false);
+    shrub(-15.0f,-28.0f,.55f,86,true); shrub(-2.5f,-42.3f,.5f,87,true); shrub(12.5f,-42.5f,.5f,88,true);
+    shrub(15.2f,-30.0f,.5f,89); shrub(-15.2f,-23.0f,.4f,90); shrub(4.0f,-16.2f,.45f,91,true);
 }
 
 void buildScene() {
-    // Site, front plaza, driveway, and courtyard lawn.
-    box(0,-.22f,-5,42,.40f,42,grass);
-    box(0,.01f,8,30,.16f,12,{.55f,.28f,.20f});
-    for(int i=-6;i<=6;++i) box(i*2.0f,.105f,8.0f,.07f,.02f,12,{.70f,.45f,.32f});
-    box(0,.03f,-10,18,.15f,12,{.20f,.55f,.20f});
-    annulus(0,.12f,9,0,1.2f,{.76f,.62f,.19f}); annulus(0,.125f,9,1.2f,2.1f,{.28f,.52f,.28f});
-    annulus(0,.13f,9,2.1f,3.0f,{.66f,.28f,.22f}); annulus(0,.135f,9,3.0f,3.25f,brightWhite);
-
-    // Front-left classroom block and its deep roof overhang.
-    box(-9,3.35f,-1.7f,10,6.3f,4.4f,white);
-    box(-9,6.65f,.15f,11.0f,.38f,7.1f,brightWhite);
-    for(int floor=0;floor<2;++floor) for(int i=0;i<5;++i)
-        frontWindow(-13.0f+i*2.05f,1.65f+floor*2.75f,.56f,1.45f,1.45f);
-    for(float x : {-13.6f,-10.8f,-8.0f,-5.2f}) box(x,3.35f,1.65f,.38f,6.5f,.45f,brightWhite);
-
-    // Monumental entrance canopy, columns, brick lobby, doors, and stairs.
-    box(1.0f,6.65f,.25f,11.5f,.42f,7.4f,brightWhite);
-    box(1.0f,3.0f,-2.7f,9.0f,5.7f,.45f,brick);
-    box(1.0f,2.0f,-2.38f,3.4f,3.4f,.18f,{.20f,.12f,.09f});
-    for(float x : {-3.9f,-1.2f,1.6f,4.3f,6.0f}) box(x,3.25f,1.9f,.38f,6.5f,.38f,brightWhite);
-    steps(1.0f,4.15f,10.5f);
-
-    // Distinctive curved red-brick SWC volume and white horizontal bands.
-    cylinder(10.4f,3.55f,-.7f,4.25f,7.1f,4.1f,brick,52);
-    cylinder(10.4f,2.05f,-.7f,4.29f,.16f,4.14f,brightWhite,52);
-    cylinder(10.4f,4.90f,-.7f,4.29f,.16f,4.14f,brightWhite,52);
-    box(7.75f,3.55f,3.10f,.15f,5.2f,.18f,brightWhite);
-    box(13.05f,3.55f,3.10f,.15f,5.2f,.18f,brightWhite);
-    textOnFront("STUDENT WELFARE",10.4f,4.25f,3.43f,.075f);
-    textOnFront("CENTER KUET",10.4f,3.65f,3.44f,.085f);
-
-    // Courtyard side wings.
-    box(-12,3.25f,-11.0f,4.0f,6.1f,16.0f,white);
-    box(12,3.25f,-11.0f,4.0f,6.1f,16.0f,white);
-    box(-9.75f,6.5f,-11,1.0f,.35f,17.0f,brightWhite);
-    box(9.75f,6.5f,-11,1.0f,.35f,17.0f,brightWhite);
-    for(int floor=0;floor<2;++floor) for(int i=0;i<6;++i) {
-        sideWindow(-9.93f,1.55f+floor*2.75f,-5.4f-i*2.35f);
-        sideWindow(9.93f,1.55f+floor*2.75f,-5.4f-i*2.35f);
-    }
-    for(int i=0;i<7;++i) {
-        box(-9.35f,3.2f,-4.3f-i*2.35f,.30f,6.2f,.30f,brightWhite);
-        box(9.35f,3.2f,-4.3f-i*2.35f,.30f,6.2f,.30f,brightWhite);
-    }
-    // Gallery floors and brick-filled railings.
-    box(-9.1f,3.15f,-11,.55f,.22f,16,brightWhite); box(9.1f,3.15f,-11,.55f,.22f,16,brightWhite);
-    box(-9.15f,3.85f,-11,.18f,.75f,15.2f,brickLight); box(9.15f,3.85f,-11,.18f,.75f,15.2f,brickLight);
-
-    // Rear wing enclosing the U-shaped court.
-    box(0,3.2f,-19,24,6.0f,3.8f,white); box(0,6.4f,-18.6f,25,.36f,5,brightWhite);
-    for(int floor=0;floor<2;++floor) for(int i=0;i<9;++i)
-        frontWindow(-8.8f+i*2.2f,1.5f+floor*2.7f,-16.98f,1.4f,1.35f);
-    for(int i=0;i<10;++i) box(-10.5f+i*2.3f,3.2f,-16.55f,.30f,6.1f,.35f,brightWhite);
-
-    // Brick outdoor stage photographed inside the courtyard.
-    box(0,.35f,-14.7f,8.0f,.7f,2.4f,brickLight);
-    box(0,2.15f,-15.65f,7.0f,3.6f,.45f,brick);
-    box(0,.25f,-13.15f,9.2f,.5f,.8f,brickLight);
-
-    // Window AC boxes and vents on the outer frontage.
-    for(float x : {-11.8f,-9.3f,-6.8f}) {
-        box(x,3.85f,.78f,.70f,.62f,.35f,{.67f,.68f,.62f});
-        cylinder(x,3.85f,1.0f,.22f,.05f,.22f,{.20f,.22f,.20f},16);
-    }
-
-    // Landscaping based on the photos.
-    tree(-16,1.8f,1.15f); tree(16,1.5f,1.25f); tree(-15,-8,1.0f); tree(15,-11,1.05f);
-    tree(-6,-10,.85f); tree(6,-12,.90f); tree(-3,-7,.70f);
-    for(float x=-13;x<=13;x+=2.6f) shrub(x,4.1f,(static_cast<int>(x)&1)?Color{.34f,.16f,.08f}:Color{.08f,.38f,.10f});
-    shrub(-7,-7); shrub(7,-8); shrub(-6,-14,{.42f,.12f,.08f}); shrub(6,-14,{.42f,.12f,.08f});
+    frames.assign(1,{identity(),normalMatrix(identity())});
+    mesh.clear(); mesh.reserve(3000000);
+    site();
+    frontWing();
+    curvedBrickFacade();
+    courtyard();
+    stage();
+    exteriorElevations();
+    landscaping();
 }
+
+// ---------------------------------------------------------------------------
+// Shaders: per-fragment Phong lighting (ambient + diffuse + specular) with
+// shadow mapping and procedural surface detail.
+// ---------------------------------------------------------------------------
+const char* sceneVertexSource=R"(
+    #version 330 core
+    layout(location=0) in vec3 position;
+    layout(location=1) in vec3 normal;
+    layout(location=2) in vec3 color;
+    layout(location=3) in vec2 material;
+    uniform mat4 viewProjection;
+    uniform mat4 model;
+    uniform mat3 normalMatrix;
+    uniform mat4 lightSpace;
+    out vec3 surfaceNormal;
+    out vec3 surfaceColor;
+    out vec3 worldPosition;
+    out vec2 surfaceMaterial;
+    out vec4 lightPosition;
+    void main(){
+        vec4 world=model*vec4(position,1.0);
+        gl_Position=viewProjection*world;
+        surfaceNormal=normalMatrix*normal;
+        surfaceColor=color;
+        surfaceMaterial=material;
+        worldPosition=world.xyz;
+        lightPosition=lightSpace*vec4(world.xyz+normalize(surfaceNormal)*0.05,1.0);
+    }
+)";
+const char* sceneFragmentSource=R"(
+    #version 330 core
+    in vec3 surfaceNormal;
+    in vec3 surfaceColor;
+    in vec3 worldPosition;
+    in vec2 surfaceMaterial;
+    in vec4 lightPosition;
+    uniform vec3 cameraPosition;
+    uniform vec3 sunDirection;
+    uniform sampler2D shadowMap;
+    uniform int shadowsEnabled;
+    out vec4 pixel;
+
+    const vec3 sunColor=vec3(1.0,0.96,0.88);
+    const vec3 skyColor=vec3(0.62,0.74,0.90);
+    const vec3 groundBounce=vec3(0.36,0.40,0.30);
+    const vec3 fogColor=vec3(0.74,0.84,0.94);
+
+    float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+    float noise(vec2 p){
+        vec2 i=floor(p),f=fract(p); f=f*f*(3.0-2.0*f);
+        return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);
+    }
+    // Running-bond units with mortar joints, faded out where they would alias.
+    vec3 bonded(vec3 base,vec2 uv,vec2 size,vec3 joint,float jointWidth,float variation){
+        float row=floor(uv.y/size.y);
+        vec2 cell=vec2(uv.x/size.x+0.5*mod(row,2.0),uv.y/size.y);
+        vec2 f=fract(cell)*size;
+        float mortar=max(step(f.x,jointWidth),step(f.y,jointWidth));
+        vec3 unit=base*(1.0-variation*0.5+variation*hash(floor(cell)));
+        float detail=1.0-smoothstep(0.35,0.8,max(fwidth(cell.x),fwidth(cell.y)));
+        return mix(mix(base,joint,0.12),mix(unit,joint,mortar),detail);
+    }
+    float shadowFactor(vec3 n){
+        if(shadowsEnabled==0) return 1.0;
+        vec3 p=lightPosition.xyz/lightPosition.w*0.5+0.5;
+        if(p.z>1.0||p.x<0.0||p.x>1.0||p.y<0.0||p.y>1.0) return 1.0;
+        float bias=0.0006+0.0012*(1.0-max(dot(n,sunDirection),0.0));
+        vec2 texel=1.0/vec2(textureSize(shadowMap,0));
+        float lit=0.0;
+        for(int x=-1;x<=1;++x) for(int y=-1;y<=1;++y)
+            lit+=p.z-bias>texture(shadowMap,p.xy+vec2(x,y)*texel).r ? 0.0 : 1.0;
+        return lit/9.0;
+    }
+    void main(){
+        vec3 n=normalize(surfaceNormal);
+        vec3 viewDirection=normalize(cameraPosition-worldPosition);
+        if(dot(n,viewDirection)<0.0) n=-n;                    // two-sided leaves, glass and thin panels
+        vec3 base=surfaceColor;
+        float gloss=surfaceMaterial.x;
+        int pattern=int(surfaceMaterial.y+0.5);
+        vec3 tangent=abs(n.y)>0.9 ? vec3(1,0,0) : normalize(cross(vec3(0,1,0),n));
+        vec2 wallUV=vec2(dot(worldPosition,tangent),abs(n.y)>0.9 ? worldPosition.z : worldPosition.y);
+        if(pattern==1) base=bonded(base,wallUV,vec2(0.24,0.075),vec3(0.72,0.66,0.58),0.011,0.35);
+        else if(pattern==3) base*=0.82+0.36*noise(worldPosition.xz*1.7)*(0.7+0.3*noise(worldPosition.xz*9.0));
+        else if(pattern==4) base=bonded(base,worldPosition.xz,vec2(0.22,0.11),base*0.72,0.012,0.35);
+        else if(pattern==5) base*=0.72+0.5*noise(vec2((worldPosition.x+worldPosition.z)*14.0,worldPosition.y*2.5));
+        else if(pattern==6) base=bonded(base,worldPosition.xz,vec2(0.6,0.6),base*0.86,0.012,0.08);
+
+        // Phong illumination: ambient + diffuse + specular.
+        float shadow=shadowFactor(n);
+        vec3 ambient=mix(groundBounce,skyColor,n.y*0.5+0.5)*0.62;
+        float diffuse=max(dot(n,sunDirection),0.0)*shadow;
+        vec3 reflection=reflect(-sunDirection,n);
+        float shininess=mix(8.0,96.0,gloss);
+        float specular=pow(max(dot(viewDirection,reflection),0.0),shininess)*gloss*shadow;
+        vec3 color=base*(ambient+sunColor*diffuse*0.95)+sunColor*specular*0.6;
+        if(pattern==2){
+            vec3 r=reflect(-viewDirection,n);
+            vec3 env=mix(groundBounce*0.6,skyColor*1.1,clamp(r.y*0.5+0.55,0.0,1.0));
+            float fresnel=0.08+0.62*pow(1.0-max(dot(n,viewDirection),0.0),3.0);
+            color=mix(color,env,fresnel*0.35);
+        }
+        float distanceToEye=length(cameraPosition-worldPosition);
+        float fog=1.0-exp(-max(distanceToEye-45.0,0.0)*0.006);
+        pixel=vec4(mix(color,fogColor,fog*0.65),1.0);
+    }
+)";
+const char* depthVertexSource=R"(
+    #version 330 core
+    layout(location=0) in vec3 position;
+    uniform mat4 lightSpace;
+    uniform mat4 model;
+    void main(){ gl_Position=lightSpace*model*vec4(position,1.0); }
+)";
+const char* depthFragmentSource=R"(
+    #version 330 core
+    void main(){}
+)";
 
 GLuint compileShader(GLenum type,const char* source) {
     GLuint shader=glCreateShader(type); glShaderSource(shader,1,&source,nullptr); glCompileShader(shader);
@@ -275,44 +1220,7 @@ GLuint compileShader(GLenum type,const char* source) {
         std::cerr<<"Shader compilation failed:\n"<<log<<'\n'; glDeleteShader(shader); return 0; }
     return shader;
 }
-GLuint makeProgram() {
-    const char* vertexSource=R"(
-        #version 330 core
-        layout(location=0) in vec3 position;
-        layout(location=1) in vec3 normal;
-        layout(location=2) in vec3 color;
-        uniform mat4 viewProjection;
-        uniform mat4 model;
-        out vec3 surfaceNormal;
-        out vec3 surfaceColor;
-        out vec3 worldPosition;
-        void main(){
-            vec4 world=model*vec4(position,1.0);
-            gl_Position=viewProjection*world;
-            surfaceNormal=mat3(model)*normal;
-            surfaceColor=color;
-            worldPosition=world.xyz;
-        }
-    )";
-    const char* fragmentSource=R"(
-        #version 330 core
-        in vec3 surfaceNormal;
-        in vec3 surfaceColor;
-        in vec3 worldPosition;
-        uniform vec3 cameraPosition;
-        out vec4 pixel;
-        void main(){
-            vec3 n=normalize(surfaceNormal);
-            vec3 light=normalize(vec3(0.45,1.0,0.65));
-            float ambient=0.28;
-            float diffuse=max(dot(n,light),0.0);
-            vec3 viewDirection=normalize(cameraPosition-worldPosition);
-            vec3 reflection=reflect(-light,n);
-            float specular=pow(max(dot(viewDirection,reflection),0.0),32.0)*0.35;
-            vec3 phongColor=surfaceColor*(ambient+0.72*diffuse)+vec3(specular);
-            pixel=vec4(phongColor,1.0);
-        }
-    )";
+GLuint makeProgram(const char* vertexSource,const char* fragmentSource) {
     GLuint vertex=compileShader(GL_VERTEX_SHADER,vertexSource),fragment=compileShader(GL_FRAGMENT_SHADER,fragmentSource);
     if(!vertex||!fragment) return 0;
     GLuint result=glCreateProgram(); glAttachShader(result,vertex); glAttachShader(result,fragment); glLinkProgram(result);
@@ -322,47 +1230,129 @@ GLuint makeProgram() {
     return result;
 }
 
+// ---------------------------------------------------------------------------
+// Camera: orbit around a target, plus presets matching the reference photos.
+// ---------------------------------------------------------------------------
+struct CameraPreset { const char* name; Vec3 eye, target; float fov; };
+const CameraPreset presets[]={
+    {"Main entrance (photo 26)",               {3.5f,1.7f,31.0f},{4.0f,4.3f,-2.0f},55},
+    {"Curved SWC facade (photo 25)",           {8.0f,1.6f,17.5f},{15.0f,4.6f,0.0f},60},
+    {"Front-left colonnade (photo 23)",        {8.0f,1.7f,22.0f},{-10.0f,3.6f,-1.0f},60},
+    {"Front-right wide view (photo 30)",       {-5.0f,1.7f,27.0f},{8.0f,4.0f,0.0f},60},
+    {"Cafeteria entrance (photo 12)",          {45.0f,1.7f,-27.5f},{29.0f,5.2f,-27.0f},60},
+    {"Courtyard stage (photo 21)",             {3.0f,1.7f,-16.5f},{-3.0f,3.0f,-44.0f},66},
+    {"Windowed courtyard wing (photo 15)",     {9.0f,1.7f,-23.0f},{-19.0f,3.6f,-33.0f},62},
+    {"Ground-floor corridor (photo 17)",       {18.9f,2.15f,-16.0f},{18.9f,2.1f,-30.0f},66},
+    {"Aerial overview",                        {48.0f,58.0f,52.0f},{0.0f,0.0f,-20.0f},50},
+};
+constexpr int presetCount=sizeof(presets)/sizeof(presets[0]);
+
+Vec3 cameraTarget{0,0,0};
+float cameraYaw=0,cameraPitch=0,cameraDistance=30,cameraFov=55;
+float modelRotation=0.0f,modelScale=1.0f;
+Vec3 modelTranslation{0.0f,0.0f,0.0f};
+bool rotating=false,panning=false,shadowsOn=true;
+double lastMouseX=0.0,lastMouseY=0.0;
+int framebufferWidth=1280,framebufferHeight=800;
+
+void applyPreset(int index) {
+    const CameraPreset& p=presets[index];
+    Vec3 d=p.eye-p.target;
+    cameraTarget=p.target; cameraDistance=length(d); cameraFov=p.fov;
+    cameraPitch=std::asin(d.y/cameraDistance)*180.0f/PI;
+    cameraYaw=std::atan2(d.x,d.z)*180.0f/PI;
+    std::cout<<"View: "<<p.name<<'\n';
+}
+Vec3 cameraEye() {
+    float yaw=radians(cameraYaw),pitch=radians(cameraPitch);
+    return {cameraTarget.x+cameraDistance*std::cos(pitch)*std::sin(yaw),
+            cameraTarget.y+cameraDistance*std::sin(pitch),
+            cameraTarget.z+cameraDistance*std::cos(pitch)*std::cos(yaw)};
+}
+void pan(float right,float forward) {
+    float yaw=radians(cameraYaw);
+    Vec3 f{-std::sin(yaw),0,-std::cos(yaw)},r{std::cos(yaw),0,-std::sin(yaw)};
+    cameraTarget=cameraTarget+r*right+f*forward;
+}
+
 void resize(GLFWwindow*,int width,int height) {
     framebufferWidth=std::max(width,1); framebufferHeight=std::max(height,1);
-    glViewport(0,0,framebufferWidth,framebufferHeight);
 }
 void mouseButton(GLFWwindow* window,int button,int action,int) {
-    if(button==GLFW_MOUSE_BUTTON_LEFT) {
-        dragging=action==GLFW_PRESS;
-        glfwGetCursorPos(window,&lastMouseX,&lastMouseY);
-    }
+    if(button==GLFW_MOUSE_BUTTON_LEFT) rotating=action==GLFW_PRESS;
+    if(button==GLFW_MOUSE_BUTTON_RIGHT) panning=action==GLFW_PRESS;
+    glfwGetCursorPos(window,&lastMouseX,&lastMouseY);
 }
 void mouseMove(GLFWwindow*,double x,double y) {
-    if(dragging) {
-        cameraYaw+=static_cast<float>(x-lastMouseX)*.25f;
-        cameraPitch=limit(cameraPitch-static_cast<float>(y-lastMouseY)*.20f,-10.0f,75.0f);
+    float dx=static_cast<float>(x-lastMouseX),dy=static_cast<float>(y-lastMouseY);
+    if(rotating) {
+        cameraYaw+=dx*.25f;
+        cameraPitch=limit(cameraPitch-dy*.20f,-15.0f,85.0f);
     }
+    if(panning) { float k=cameraDistance*.0018f; pan(-dx*k,dy*k); }
     lastMouseX=x; lastMouseY=y;
 }
-void scroll(GLFWwindow*,double,double offset) { cameraDistance=limit(cameraDistance-static_cast<float>(offset)*2.0f,18.0f,75.0f); }
+void scroll(GLFWwindow*,double,double offset) {
+    cameraDistance=limit(cameraDistance*std::pow(.9f,static_cast<float>(offset)),.5f,160.0f);
+}
+bool down(GLFWwindow* window,int key) { return glfwGetKey(window,key)==GLFW_PRESS; }
+bool keyWasDown[GLFW_KEY_LAST+1]={};
+bool pressed(GLFWwindow* window,int key) {
+    bool now=down(window,key),result=now&&!keyWasDown[key];
+    keyWasDown[key]=now;
+    return result;
+}
 void input(GLFWwindow* window,float delta) {
-    if(glfwGetKey(window,GLFW_KEY_ESCAPE)==GLFW_PRESS) glfwSetWindowShouldClose(window,GLFW_TRUE);
-    if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS||glfwGetKey(window,GLFW_KEY_LEFT)==GLFW_PRESS) cameraYaw-=42*delta;
-    if(glfwGetKey(window,GLFW_KEY_D)==GLFW_PRESS||glfwGetKey(window,GLFW_KEY_RIGHT)==GLFW_PRESS) cameraYaw+=42*delta;
-    if(glfwGetKey(window,GLFW_KEY_W)==GLFW_PRESS||glfwGetKey(window,GLFW_KEY_UP)==GLFW_PRESS) cameraPitch=limit(cameraPitch+32*delta,-10,75);
-    if(glfwGetKey(window,GLFW_KEY_S)==GLFW_PRESS||glfwGetKey(window,GLFW_KEY_DOWN)==GLFW_PRESS) cameraPitch=limit(cameraPitch-32*delta,-10,75);
-    if(glfwGetKey(window,GLFW_KEY_Q)==GLFW_PRESS) cameraDistance=limit(cameraDistance+18*delta,18,75);
-    if(glfwGetKey(window,GLFW_KEY_E)==GLFW_PRESS) cameraDistance=limit(cameraDistance-18*delta,18,75);
-    if(glfwGetKey(window,GLFW_KEY_J)==GLFW_PRESS) modelRotation-=45*delta;
-    if(glfwGetKey(window,GLFW_KEY_L)==GLFW_PRESS) modelRotation+=45*delta;
-    if(glfwGetKey(window,GLFW_KEY_Z)==GLFW_PRESS) modelScale=limit(modelScale-0.5f*delta,.65f,1.35f);
-    if(glfwGetKey(window,GLFW_KEY_X)==GLFW_PRESS) modelScale=limit(modelScale+0.5f*delta,.65f,1.35f);
-    if(glfwGetKey(window,GLFW_KEY_C)==GLFW_PRESS) { modelRotation=0; modelScale=1; }
-    if(glfwGetKey(window,GLFW_KEY_R)==GLFW_PRESS) { cameraYaw=35; cameraPitch=20; cameraDistance=43; }
+    if(down(window,GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(window,GLFW_TRUE);
+    if(down(window,GLFW_KEY_A)||down(window,GLFW_KEY_LEFT)) cameraYaw-=42*delta;
+    if(down(window,GLFW_KEY_D)||down(window,GLFW_KEY_RIGHT)) cameraYaw+=42*delta;
+    if(down(window,GLFW_KEY_W)||down(window,GLFW_KEY_UP)) cameraPitch=limit(cameraPitch+32*delta,-15,85);
+    if(down(window,GLFW_KEY_S)||down(window,GLFW_KEY_DOWN)) cameraPitch=limit(cameraPitch-32*delta,-15,85);
+    if(down(window,GLFW_KEY_Q)) cameraDistance=limit(cameraDistance*(1+1.2f*delta),.5f,160);
+    if(down(window,GLFW_KEY_E)) cameraDistance=limit(cameraDistance*(1-1.2f*delta),.5f,160);
+    float move=(down(window,GLFW_KEY_LEFT_SHIFT) ? 24.0f : 8.0f)*delta;
+    if(down(window,GLFW_KEY_T)) pan(0,move);
+    if(down(window,GLFW_KEY_G)) pan(0,-move);
+    if(down(window,GLFW_KEY_PAGE_UP)) cameraTarget.y+=move;
+    if(down(window,GLFW_KEY_PAGE_DOWN)) cameraTarget.y=std::max(0.2f,cameraTarget.y-move);
+    if(down(window,GLFW_KEY_J)) modelRotation-=45*delta;
+    if(down(window,GLFW_KEY_L)) modelRotation+=45*delta;
+    if(down(window,GLFW_KEY_Z)) modelScale=limit(modelScale-0.5f*delta,.5f,1.5f);
+    if(down(window,GLFW_KEY_X)) modelScale=limit(modelScale+0.5f*delta,.5f,1.5f);
+    if(down(window,GLFW_KEY_U)) modelTranslation.x-=5.0f*delta;
+    if(down(window,GLFW_KEY_O)) modelTranslation.x+=5.0f*delta;
+    if(down(window,GLFW_KEY_I)) modelTranslation.z-=5.0f*delta;
+    if(down(window,GLFW_KEY_K)) modelTranslation.z+=5.0f*delta;
+    if(down(window,GLFW_KEY_C)) { modelRotation=0; modelScale=1; modelTranslation={0,0,0}; }
+    if(pressed(window,GLFW_KEY_R)) applyPreset(0);
+    if(pressed(window,GLFW_KEY_F)) { applyPreset(0); modelRotation=0; modelScale=1; modelTranslation={0,0,0}; }
+    for(int i=0;i<presetCount;++i) if(pressed(window,GLFW_KEY_1+i)) applyPreset(i);
+    if(pressed(window,GLFW_KEY_B)) shadowsOn=!shadowsOn;
+}
+
+bool writeScreenshot(const char* path,int width,int height) {
+    std::vector<unsigned char> pixels(static_cast<std::size_t>(width)*height*3);
+    glPixelStorei(GL_PACK_ALIGNMENT,1);
+    glReadPixels(0,0,width,height,GL_RGB,GL_UNSIGNED_BYTE,pixels.data());
+    FILE* file=std::fopen(path,"wb");
+    if(!file) return false;
+    std::fprintf(file,"P6\n%d %d\n255\n",width,height);
+    for(int y=height-1;y>=0;--y) std::fwrite(&pixels[static_cast<std::size_t>(y)*width*3],1,static_cast<std::size_t>(width)*3,file);
+    std::fclose(file);
+    return true;
 }
 
 } // namespace
 
-int main() {
+int main(int argc,char** argv) {
+    // Optional: image_project.exe --capture <view 1-9> <file.ppm> renders one frame to a file.
+    int captureView=-1; const char* capturePath=nullptr;
+    if(argc==4&&std::strcmp(argv[1],"--capture")==0) { captureView=std::atoi(argv[2])-1; capturePath=argv[3]; }
+
     if(!glfwInit()) { std::cerr<<"Could not initialize GLFW.\n"; return EXIT_FAILURE; }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,3); glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,3);
     glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE); glfwWindowHint(GLFW_SAMPLES,4);
-    GLFWwindow* window=glfwCreateWindow(1280,800,"KUET Student Welfare Centre - Interactive 3D View",nullptr,nullptr);
+    GLFWwindow* window=glfwCreateWindow(1280,800,"KUET Student Welfare Center - Interactive 3D View",nullptr,nullptr);
     if(!window) { glfwTerminate(); return EXIT_FAILURE; }
     glfwMakeContextCurrent(window); glfwSwapInterval(1);
     if(!load_opengl_functions(reinterpret_cast<void*(*)(const char*)>(glfwGetProcAddress))) {
@@ -370,10 +1360,11 @@ int main() {
     }
     glfwSetFramebufferSizeCallback(window,resize); glfwSetMouseButtonCallback(window,mouseButton);
     glfwSetCursorPosCallback(window,mouseMove); glfwSetScrollCallback(window,scroll);
-    glfwGetFramebufferSize(window,&framebufferWidth,&framebufferHeight); resize(window,framebufferWidth,framebufferHeight);
-    glEnable(GL_DEPTH_TEST);
+    glfwGetFramebufferSize(window,&framebufferWidth,&framebufferHeight);
+    glEnable(GL_DEPTH_TEST); glEnable(GL_MULTISAMPLE);
 
     buildScene();
+    std::cout<<"SWC scene: "<<mesh.size()/3<<" triangles\n";
     GLuint vao=0,vbo=0; glGenVertexArrays(1,&vao); glGenBuffers(1,&vbo); glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER,vbo);
     glBufferData(GL_ARRAY_BUFFER,static_cast<GLsizeiptr>(mesh.size()*sizeof(Vertex)),mesh.data(),GL_STATIC_DRAW);
@@ -383,31 +1374,84 @@ int main() {
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Vertex),reinterpret_cast<void*>(offsetof(Vertex,color)));
     glEnableVertexAttribArray(2);
-    GLuint program=makeProgram(); if(!program) return EXIT_FAILURE;
-    GLint matrixLocation=glGetUniformLocation(program,"viewProjection");
-    GLint modelLocation=glGetUniformLocation(program,"model");
-    GLint cameraLocation=glGetUniformLocation(program,"cameraPosition");
+    glVertexAttribPointer(3,2,GL_FLOAT,GL_FALSE,sizeof(Vertex),reinterpret_cast<void*>(offsetof(Vertex,gloss)));
+    glEnableVertexAttribArray(3);
 
-    double previous=glfwGetTime();
+    GLuint program=makeProgram(sceneVertexSource,sceneFragmentSource);
+    GLuint depthProgram=makeProgram(depthVertexSource,depthFragmentSource);
+    if(!program||!depthProgram) return EXIT_FAILURE;
+    GLint viewProjectionLocation=glGetUniformLocation(program,"viewProjection");
+    GLint modelLocation=glGetUniformLocation(program,"model");
+    GLint normalLocation=glGetUniformLocation(program,"normalMatrix");
+    GLint lightSpaceLocation=glGetUniformLocation(program,"lightSpace");
+    GLint cameraLocation=glGetUniformLocation(program,"cameraPosition");
+    GLint sunLocation=glGetUniformLocation(program,"sunDirection");
+    GLint shadowMapLocation=glGetUniformLocation(program,"shadowMap");
+    GLint shadowsLocation=glGetUniformLocation(program,"shadowsEnabled");
+    GLint depthLightLocation=glGetUniformLocation(depthProgram,"lightSpace");
+    GLint depthModelLocation=glGetUniformLocation(depthProgram,"model");
+
+    // Shadow map: one consistent sun from the front-right, high in the sky.
+    constexpr int SHADOW_SIZE=4096;
+    GLuint shadowTexture=0,shadowFramebuffer=0;
+    glGenTextures(1,&shadowTexture); glBindTexture(GL_TEXTURE_2D,shadowTexture);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_DEPTH_COMPONENT24,SHADOW_SIZE,SHADOW_SIZE,0,GL_DEPTH_COMPONENT,GL_FLOAT,nullptr);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST); glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_BORDER); glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_BORDER);
+    const float border[4]={1,1,1,1}; glTexParameterfv(GL_TEXTURE_2D,GL_TEXTURE_BORDER_COLOR,border);
+    glGenFramebuffers(1,&shadowFramebuffer); glBindFramebuffer(GL_FRAMEBUFFER,shadowFramebuffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,shadowTexture,0);
+    glDrawBuffer(GL_NONE); glReadBuffer(GL_NONE);
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER)!=GL_FRAMEBUFFER_COMPLETE) { std::cerr<<"Shadow map unavailable.\n"; shadowsOn=false; }
+    glBindFramebuffer(GL_FRAMEBUFFER,0);
+    const Vec3 sun=normalize({.42f,1.0f,.62f}),sceneCenter{6,0,-20};
+    const Mat4 lightSpace=multiply(orthographic(-95,95,-95,95,1,320),lookAt(sceneCenter+sun*150.0f,sceneCenter,{0,1,0}));
+
+    applyPreset(captureView>=0&&captureView<presetCount ? captureView : 0);
+    std::cout<<"Keys 1-9 select reference-photo views; B toggles shadows.\n";
+    double previous=glfwGetTime(); int frame=0;
     while(!glfwWindowShouldClose(window)) {
         double now=glfwGetTime(); float delta=static_cast<float>(std::min(now-previous,.05)); previous=now;
-        input(window,delta);
-        float yaw=radians(cameraYaw),pitch=radians(cameraPitch);
-        Vec3 target{0,2.7f,-5.0f};
-        Vec3 eye{target.x+cameraDistance*std::cos(pitch)*std::sin(yaw),
-                 target.y+cameraDistance*std::sin(pitch),
-                 target.z+cameraDistance*std::cos(pitch)*std::cos(yaw)};
-        Mat4 projection=perspective(radians(48.0f),static_cast<float>(framebufferWidth)/framebufferHeight,.1f,160.0f);
-        Mat4 view=lookAt(eye,target,{0,1,0}); Mat4 viewProjection=multiply(projection,view);
-        Mat4 model=multiply(rotationY(radians(modelRotation)),scaling(modelScale));
+        if(!capturePath) input(window,delta);
+        Vec3 eye=cameraEye();
+        Mat4 projection=perspective(radians(cameraFov),static_cast<float>(framebufferWidth)/framebufferHeight,.15f,450.0f);
+        Mat4 viewProjection=multiply(projection,lookAt(eye,cameraTarget,{0,1,0}));
+        // Composite object transformation: translation * rotation * scaling.
+        Mat4 model=multiply(translation(modelTranslation),multiply(rotationY(radians(modelRotation)),scaling(modelScale)));
+        Mat3 normals=normalMatrix(model);
+        glBindVertexArray(vao);
 
-        glClearColor(.43f,.70f,.91f,1); glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-        glUseProgram(program); glUniformMatrix4fv(matrixLocation,1,GL_FALSE,viewProjection.m);
+        if(shadowsOn) {
+            glBindFramebuffer(GL_FRAMEBUFFER,shadowFramebuffer); glViewport(0,0,SHADOW_SIZE,SHADOW_SIZE);
+            glClear(GL_DEPTH_BUFFER_BIT);
+            glUseProgram(depthProgram);
+            glUniformMatrix4fv(depthLightLocation,1,GL_FALSE,lightSpace.m);
+            glUniformMatrix4fv(depthModelLocation,1,GL_FALSE,model.m);
+            glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(mesh.size()));
+            glBindFramebuffer(GL_FRAMEBUFFER,0);
+        }
+        glViewport(0,0,framebufferWidth,framebufferHeight);
+        glClearColor(.55f,.73f,.92f,1); glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+        glUseProgram(program);
+        glUniformMatrix4fv(viewProjectionLocation,1,GL_FALSE,viewProjection.m);
         glUniformMatrix4fv(modelLocation,1,GL_FALSE,model.m);
+        glUniformMatrix3fv(normalLocation,1,GL_FALSE,normals.m);
+        glUniformMatrix4fv(lightSpaceLocation,1,GL_FALSE,lightSpace.m);
         glUniform3f(cameraLocation,eye.x,eye.y,eye.z);
-        glBindVertexArray(vao); glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(mesh.size()));
+        glUniform3f(sunLocation,sun.x,sun.y,sun.z);
+        glUniform1i(shadowMapLocation,0);
+        glUniform1i(shadowsLocation,shadowsOn ? 1 : 0);
+        glBindTexture(GL_TEXTURE_2D,shadowTexture);
+        glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(mesh.size()));
+
+        if(capturePath&&++frame==3) {
+            bool ok=writeScreenshot(capturePath,framebufferWidth,framebufferHeight);
+            std::cout<<(ok ? "Saved " : "Could not save ")<<capturePath<<'\n';
+            glfwSetWindowShouldClose(window,GLFW_TRUE);
+        }
         glfwSwapBuffers(window); glfwPollEvents();
     }
-    glDeleteProgram(program); glDeleteBuffers(1,&vbo); glDeleteVertexArrays(1,&vao);
+    glDeleteFramebuffers(1,&shadowFramebuffer); glDeleteTextures(1,&shadowTexture);
+    glDeleteProgram(program); glDeleteProgram(depthProgram); glDeleteBuffers(1,&vbo); glDeleteVertexArrays(1,&vao);
     glfwDestroyWindow(window); glfwTerminate(); return EXIT_SUCCESS;
 }
