@@ -10,6 +10,17 @@ the courtyard stage, the cafeteria with its external stair, the plaza alpona,
 the bamboo gazebo, roads, hedges and palms. Lighting is per-fragment Phong
 with shadow mapping from one consistent sun.
 
+The corrected layout leaves the left side open. Behind the entrance and curved
+SWC sign, a covered tiled corridor connects to the three-storey block, with
+aligned upper walkways and return stairs serving all three floors. The central
+entrance doorway is open so the route through to the courtyard is visible.
+The three-storey block is shifted forward and onto the doorway's centreline:
+walking through the main door now continues straight along its corridor.
+Its room side extends to the right edge of the oval SWC facade, with additional
+front window bays; the corridor and stair alignment stays fixed.
+The cafeteria, external stairs, and forecourt sit 8 units farther toward the rear;
+camera preset `5` follows the relocated entrance.
+
 ## Build and run (PowerShell)
 
 ```powershell
@@ -54,7 +65,7 @@ offline. The program opens at a front three-quarter presentation view.
 | `5` | Cafeteria entrance | 3.07.55 AM |
 | `6` | Courtyard stage | 3.07.59 AM |
 | `7` | Open left courtyard lawn | Corrected site layout |
-| `8` | Ground-floor corridor | 3.07.57 AM |
+| `8` | Straight view through entrance door into the three-storey corridor | Corrected alignment |
 | `9` | Aerial overview | - |
 
 `image_project.exe --capture <1-9> out.ppm` renders one view to an image file
@@ -67,7 +78,8 @@ placed with composite `T * R * S` transforms on a transform stack (`Place`):
 
 - `windowBay`, `acUnit`, `door`, `balconyPanel`, `openFrame`, `stair`
 - `windowedWing` (long windowed wings) and `galleryWing` (balcony corridors)
-- `curvedBrickFacade`, `frontWing`, `courtyard`, `stage`, `cafeteria`, `shopfront`
+- `curvedBrickFacade`, `frontWing`, `entranceCorridor`, `connectedStairwell`,
+  `courtyard`, `stage`, `cafeteria`
 - `broadleafTree`, `coconutPalm`, `fanPalm`, `arecaPalm`, `araucaria`,
   `shrub`, `croton`, `hedge`, `gazebo`, `alpona`
 

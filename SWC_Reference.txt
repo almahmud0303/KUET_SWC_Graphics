@@ -391,3 +391,23 @@ foliage does not hide proportion errors during modeling.
 Exact reconstruction would require a measured plan or additional references for
 concealed areas, one reliable real-world dimension for scale, and clearer views
 of uncertain junctions. Keep those parts adjustable in the model.
+
+16. USER-CONFIRMED LAYOUT CORRECTIONS
+
+These corrections supersede earlier inferred positions in this reference:
+- The long left-side courtyard building wing is absent; that side remains open.
+- The projecting windowed section beside the curved SWC facade is removed.
+- An open covered corridor sits behind the entrance and curved SWC sign and
+  joins the three-storey block. Its main references are 3.07.57 AM and
+  3.07.59 AM (1): pale tiles with dark accents, square columns, ceiling beams,
+  lights, and open bays toward the lawn.
+- The model uses matching upper landing heights and a return stair to connect
+  all three floors. Stair dimensions and exact placement remain modeling choices.
+- The central entrance doorway is open through to the rear circulation.
+- The three-storey block is brought forward and aligned with the entrance door.
+  The main route runs straight through the door into its corridor, without a
+  sideways turn. The stairs and exterior facades move with the complete block.
+- The three-storey room wing extends outward to the oval facade's right edge.
+  The corridor stays on the entrance axis while room widths and roofs increase.
+- The cafeteria is set farther back along the three-storey wing. The current
+  model uses an 8-unit setback, including its external stairs and paved approach.
