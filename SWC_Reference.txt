@@ -1,6 +1,26 @@
 KUET STUDENT WELFARE CENTER (SWC)
 Architectural reference for the 3D graphics project
-Based on the 30 photographs in the project folder
+Based on the 30 photographs in project and 14 additional photos in project_2
+
+RIGHT-SIDE UPDATE (project_2, September 29)
+
+The new sequence shows a two-storey shop pavilion immediately beside the
+curved brick sign. Its broad thin white canopy projects beyond tall square
+columns. The upper room wall facing the road is mostly plain plaster, with
+two fine horizontal joints; barred windows with brick spandrels face the
+ends. Recessed ground-floor shops include a roller shutter, open counters
+and blue waiting seats. Keep the tiled arcade open in front of them.
+
+Open end balconies have pale parapets, brick insets and metal rails. At the
+cafeteria's adjoining block, a tall horizontal grille screens the balcony.
+The user-marked cafeteria location is farther back, near the gazebo. Facing
+the entrance, the external stair is on its RIGHT, followed by the two-storey
+balcony and windowed return in photos 6.42.34 PM (1) and (2). This is a separate
+block from the front shops. The stair has a sloped brick side wall and metal
+handrails, and its upper landing meets that right-hand balcony. The
+canopy remains below the roof of the three-storey cafeteria block. The
+forecourt is red paving with pale square accents; low hedges and small trees
+border the road. Sizes and hidden junctions remain modeling estimates.
 
 1. PURPOSE AND ACCURACY
 

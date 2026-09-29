@@ -18,8 +18,18 @@ The three-storey block is shifted forward and onto the doorway's centreline:
 walking through the main door now continues straight along its corridor.
 Its room side extends to the right edge of the oval SWC facade, with additional
 front window bays; the corridor and stair alignment stays fixed.
-The cafeteria, external stairs, and forecourt sit 8 units farther toward the rear;
-camera preset `5` follows the relocated entrance.
+The cafeteria occupies the rear bays beside the gazebo, at a setback of 20
+units from the old side entrance. Facing it, the external stair is on the
+right and joins a separate two-storey balcony/windowed block. Camera preset
+`5` faces the entrance and `V` shows the complete corner.
+
+The 14 additional photographs in `project_2/` guide the right-side shop wing:
+a two-storey shop canopy extends back from the curved sign,
+with tall free-standing columns, a recessed plain upper wall, shuttered/open
+shops and brick-inset end balconies. Farther back, the cafeteria's right-hand
+stair connects to the grilled balcony of its adjoining low block. The roadside
+planting, raised tiled arcade, and paved forecourt follow the new views.
+Dimensions remain visual estimates from photographs, rather than a survey.
 
 ## Build and run (PowerShell)
 
@@ -30,6 +40,10 @@ cmake --build build --parallel
 .\build\image_project.exe
 ```
 
+If the running viewer locks `build/image_project.exe`, the updated copy for
+this revision is `build/updated/image_project.exe`. Close the old viewer and
+run that copy to see the relocated cafeteria.
+
 The first CMake configuration downloads GLFW. Later builds normally work
 offline. The program opens at a front three-quarter presentation view.
 
@@ -38,6 +52,8 @@ offline. The program opens at a front three-quarter presentation view.
 | Control | Action |
 |---|---|
 | `1` - `9` | Reference-photo views (see below) |
+| `0` | Right-side shops and curved-wall connection |
+| `V` | Right-side balcony, external stair, and cafeteria forecourt |
 | Hold left mouse + drag | Orbit around the view target |
 | Hold right mouse + drag | Pan the view target |
 | Mouse wheel | Zoom in or out |
@@ -67,9 +83,11 @@ offline. The program opens at a front three-quarter presentation view.
 | `7` | Open left courtyard lawn | Corrected site layout |
 | `8` | Straight view through entrance door into the three-storey corridor | Corrected alignment |
 | `9` | Aerial overview | - |
+| `0` | Right-side shops | project_2, 6.42.27-6.42.31 PM |
+| `V` | Right-side stair and balcony | project_2, 6.42.34 PM |
 
-`image_project.exe --capture <1-9> out.ppm` renders one view to an image file
-and exits, which is useful for comparing against the photographs.
+`image_project.exe --capture <1-11> out.ppm` renders one view in a hidden window
+and exits. Capture `10` is the `0` key view; capture `11` is the `V` key view.
 
 ## Scene structure
 
@@ -79,7 +97,7 @@ placed with composite `T * R * S` transforms on a transform stack (`Place`):
 - `windowBay`, `acUnit`, `door`, `balconyPanel`, `openFrame`, `stair`
 - `windowedWing` (long windowed wings) and `galleryWing` (balcony corridors)
 - `curvedBrickFacade`, `frontWing`, `entranceCorridor`, `connectedStairwell`,
-  `courtyard`, `stage`, `cafeteria`
+  `courtyard`, `stage`, `rightSideWing`, `cafeteria`, `cafeteriaRightBlock`
 - `broadleafTree`, `coconutPalm`, `fanPalm`, `arecaPalm`, `araucaria`,
   `shrub`, `croton`, `hedge`, `gazebo`, `alpona`
 
@@ -95,6 +113,7 @@ image_project/
 |-- src/gl_loader.c
 |-- src/main.cpp
 |-- project/             30 reference photographs
+|-- project_2/           14 additional right-side photographs
 `-- build/               generated files and executable
 ```
 
