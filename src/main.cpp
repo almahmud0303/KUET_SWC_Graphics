@@ -344,6 +344,7 @@ constexpr float CAFETERIA_SETBACK=20.0f; // marked rear bays beside the gazebo
 constexpr float CAFETERIA_FRONT_Z=-20.0f-CAFETERIA_SETBACK;
 constexpr float CAFETERIA_REAR_Z=CAFETERIA_FRONT_Z-13.0f;
 constexpr float CAFE_WORLD_Z=CAFETERIA_FRONT_Z+TALL_BLOCK_OFFSET.z;
+constexpr float ENTRY_FRONT_Z=-17.2f,ENTRY_BACK_Z=-20.25f;
 
 // ---------------------------------------------------------------------------
 // Reusable components (all in a local facade frame: facade plane z=0,
@@ -425,7 +426,7 @@ struct WindowWing {
 };
 void windowedWing(const WindowWing& s,float seed) {
     const float length=s.bays*s.bay,top=PLINTH+s.levels*s.storey;
-    block(0,PLINTH,-.75f,length,top,-.34f,concrete);
+    block(0,s.skipGround ? PLINTH+s.storey : PLINTH,-.75f,length,top,-.34f,concrete);
     if(s.walkway) {
         block(-.3f,0,-.75f,length+.3f,PLINTH,s.overhang-.5f,walkway);
         block(-.3f,0,s.overhang-.5f,length+.3f,PLINTH+.004f,s.overhang-.35f,darkTile);
@@ -768,6 +769,8 @@ void site() {
     addQuad({-28,.021f,-58},{-24,.021f,-58},{-24,.021f,-62},{-28,.021f,-62},{0,1,0},paving);
     // Close roadside path and rear forecourt seen beside the new shop wing.
     addQuad({36,.025f,1},{41,.025f,1},{41,.025f,-24.3f},{36,.025f,-24.3f},{0,1,0},road);
+    // Straight paved approach through the hedge opening to the stall-front corridor.
+    block(30.6f,0,ENTRY_BACK_Z-.25f,36.0f,.035f,ENTRY_FRONT_Z+.25f,paving);
     addQuad({29,.025f,CAFE_WORLD_Z+.5f},{41,.025f,CAFE_WORLD_Z+.5f},
             {41,.025f,CAFE_WORLD_Z-15},{29,.025f,CAFE_WORLD_Z-15},{0,1,0},paving);
 }
@@ -832,7 +835,11 @@ void entranceCorridor() {
     block(-1.1f,0,rear,3.5f,PLINTH,-6.0f,walkway);
     block(-1.1f,first-.32f,rear,3.5f,first,-9.0f,concrete);
     block(-1.1f,roof,rear,3.5f,roof+SLAB,-6.0f,trim);
-    block(3.5f,PLINTH,rear,3.75f,roof,-7.0f,concrete);
+    // Open side doors into the new transverse corridor on both levels.
+    block(3.5f,PLINTH,rear,3.75f,roof,-10.8f,concrete);
+    block(3.5f,PLINTH,-7.5f,3.75f,roof,-7.0f,concrete);
+    block(3.5f,PLINTH+2.8f,-10.8f,3.75f,first,-7.5f,concrete);
+    block(3.5f,first+2.8f,-10.8f,3.75f,roof,-7.5f,concrete);
     for(float floor : {PLINTH,first}) {
         // Longitudinal tile borders emphasize the straight route through the door.
         for(float x : {COURTYARD_RIGHT+.15f,ENTRANCE_AXIS+1.45f})
@@ -969,10 +976,15 @@ void courtyard() {
     // Move corridor, rooms, stairs, and roof details as one complete block.
     { Place aligned(translation(TALL_BLOCK_OFFSET));
       { Place p(trs({17.3f,0,-44.3f},-90));
-        galleryWing({6,29.8f/6,3,STOREY_TALL,3.2f,0x15u,0,0x20u,true,0},41.0f); }
+        galleryWing({6,29.8f/6,3,STOREY_TALL,3.2f,0x15u,0x10u,0x20u,true,0},41.0f); }
       connectedStairwell();
       block(17.3f,0,-55.25f,21.25f,11.7f,-44.3f,concrete);
-      block(21.25f,0,CAFETERIA_FRONT_Z,25.45f+TALL_EXTRA_WIDTH,11.7f,-20.0f,concrete);
+      // True ground-floor opening on the new doorway axis, through the room mass.
+      const float passageBack=ENTRY_BACK_Z-TALL_BLOCK_OFFSET.z;
+      const float passageFront=ENTRY_FRONT_Z-TALL_BLOCK_OFFSET.z;
+      block(21.25f,0,CAFETERIA_FRONT_Z,25.45f+TALL_EXTRA_WIDTH,11.7f,passageBack,concrete);
+      block(21.25f,0,passageFront,25.45f+TALL_EXTRA_WIDTH,11.7f,-20.0f,concrete);
+      block(21.25f,PLINTH+STOREY_TALL-.28f,passageBack,25.45f+TALL_EXTRA_WIDTH,11.7f,passageFront,concrete);
       block(21.25f,0,CAFETERIA_REAR_Z,26.5f+TALL_EXTRA_WIDTH,11.7f,CAFETERIA_FRONT_Z,concrete);
       block(21.25f,0,-55.25f,25.45f+TALL_EXTRA_WIDTH,11.7f,CAFETERIA_REAR_Z,concrete);
       // New front rooms fill the widened area beside the unchanged stairwell.
@@ -1015,7 +1027,8 @@ void stage() {
 // curved sign. Local +X follows the road toward the cafeteria; +Z faces it.
 // The blank upper wall, deep eaves and open end balconies are distinctive.
 void rightSideWing() {
-    Place wing(trs({29.0f,0,-5.15f},90));
+    // Shorter, narrower stalls tucked behind the oval; inner edge x=22.34.
+    Place wing(trs({27.8f,0,-5.8f},90,{.68f,1,.78f}));
     const float end=22.0f,first=PLINTH+STOREY_TALL,top=PLINTH+2*STOREY_TALL;
     const float roomStart=3.8f,roomEnd=16.0f;
     block(-.35f,0,-7.0f,end+.35f,PLINTH,2.75f,walkway);
@@ -1031,8 +1044,9 @@ void rightSideWing() {
         cylinder(x,top-.15f,2.0f,.085f,.15f,.085f,lampBlack,12);
 
     // Solid upper room volume; two very fine horizontal plaster joints.
-    block(roomStart,first,-6.5f,roomEnd,top,-.32f,concrete);
-    block(roomStart,first-.28f,-6.5f,roomEnd,first,.04f,trim);
+    // Reserve the inner strip for the passage beside the taller block.
+    block(roomStart,first,-3.2f,roomEnd,top,-.32f,concrete);
+    block(roomStart,first-.28f,-3.2f,roomEnd,first,.04f,trim);
     for(float y : {first+.62f,first+1.22f})
         block(roomStart,y,-.325f,roomEnd,y+.014f,-.31f,roofMembrane);
     // End windows face along the road, with brick panels below the grilles.
@@ -1043,26 +1057,20 @@ void rightSideWing() {
       windowBay(1.55f,first,2.25f,602.0f);
       block(.2f,first+3.0f,-.35f,3.0f,top,0,concrete); }
 
-    // Recessed shop openings below the plain upper wall: one closed shutter,
-    // two open counters. The arcade in front stays physically open.
-    const Material shutter{{.65f,.67f,.62f},.3f};
-    const Material blueSeat{{.02f,.39f,.70f},.35f};
-    for(int b=0;b<3;++b) {
-        float a=roomStart+b*(roomEnd-roomStart)/3,bx=a+(roomEnd-roomStart)/3;
+    // Two counters shifted left, leaving the right-hand front bays open
+    // straight through to the corridor. No shutter, waiting seats or bin.
+    for(int b=0;b<2;++b) {
+        float a=roomStart+b*6.1f,bx=a+6.1f;
         block(a,PLINTH,-.35f,a+.30f,first,.02f,concrete);
         block(a+.3f,PLINTH,-3.0f,bx-.15f,first-.5f,-2.92f,darkGap);
         block(a+.3f,first-.75f,-2.89f,bx-.15f,first-.43f,-2.83f,signDark);
-        if(b==0) {
-            block(a+.35f,PLINTH,-2.86f,bx-.2f,first-.8f,-2.8f,shutter);
-            for(float y=PLINTH+.1f;y<first-.8f;y+=.10f)
-                block(a+.35f,y,-2.80f,bx-.2f,y+.016f,-2.78f,metalDark);
-        } else {
+        {
             block(a+.4f,PLINTH,-2.9f,bx-.25f,PLINTH+.85f,-2.2f,wood);
             block(a+.35f,PLINTH+.85f,-2.98f,bx-.20f,PLINTH+.92f,-2.13f,trim);
             for(int shelf=0;shelf<3;++shelf) {
                 float y=PLINTH+1.1f+shelf*.52f;
                 block(a+.4f,y,-2.90f,bx-.3f,y+.05f,-2.6f,wood);
-                for(int k=0;k<7;++k) {
+                for(int k=0;k<11;++k) {
                     Material packet{k%3==0 ? Color{.78f,.16f,.08f} :
                                     (k%3==1 ? Color{.85f,.65f,.15f} : Color{.19f,.48f,.25f}),.15f};
                     block(a+.58f+k*.43f,y+.05f,-2.73f,a+.79f+k*.43f,y+.35f,-2.52f,packet);
@@ -1073,14 +1081,8 @@ void rightSideWing() {
         block(a+.1f,first-.45f,-3.0f,a+.22f,first-.28f,-.1f,trim);
     }
     block(roomEnd-.15f,PLINTH,-.35f,roomEnd+.15f,first,.02f,concrete);
-    // Blue waiting seats and small bins seen beside the shutter.
-    for(int i=0;i<3;++i) {
-        float x=4.6f+i*.62f;
-        block(x,PLINTH+.43f,-1.1f,x+.5f,PLINTH+.51f,-.62f,blueSeat);
-        block(x,PLINTH+.5f,-1.12f,x+.5f,PLINTH+.97f,-1.04f,blueSeat);
-        for(float dx : {.08f,.42f}) block(x+dx,PLINTH,-.95f,x+dx+.035f,PLINTH+.43f,-.87f,metalDark);
-    }
-    cylinder(3.35f,PLINTH,-.6f,.22f,.72f,.22f,{{.02f,.40f,.45f},.3f},16);
+    // Broad frontal access, aligned with the clear bay rather than the end gate.
+    stair(19.0f,3.65f,4.6f,3,.15f,.30f,0,trim);
 
     // Open upper balconies at both ends, with brick inset parapets and rails.
     for(int side=0;side<2;++side) {
@@ -1088,22 +1090,129 @@ void rightSideWing() {
         block(a,first-.28f,-6.5f,b,first,-.05f,concrete);
         { Place edge(translation({0,0,-.05f})); balconyPanel(a+.25f,b-.25f,first); }
         for(float x : {a,b}) block(x-.2f,PLINTH,-.4f,x+.2f,top,0,concrete);
-        { Place back(translation({0,0,-5.8f}));
-          block(a,PLINTH,-.4f,b,top,-.34f,concrete);
-          door((a+b)/2,PLINTH,620+side,1.5f,2.5f);
+        { Place back(translation({0,0,-3.1f}));
+          // Keep the space behind the oval empty at ground level.
+          block(a,first,-.4f,b,top,-.34f,concrete);
           windowBay((a+b)/2,first,std::min(3.2f,b-a-.8f),625+side); }
     }
     // Rear balcony of the front shop wing, separate from the rear cafeteria.
-    { Place rear(trs({end,0,-6.5f},90)); balconyPanel(.2f,6.2f,first); }
+    // Only the shop-side return; frontGapCorridor builds the adjoining balcony.
+    { Place rear(trs({end,0,-6.5f},90)); balconyPanel(3.3f,6.2f,first); }
     block(end-1.25f,first-.25f,-6.5f,end,first,0,concrete);
-    for(float y=first+1.15f;y<top-.18f;y+=.20f)
-        rod({end, y,-6.2f},{end,y,-.35f},.014f,metal,6);
-    for(float z=-6.2f;z<-.3f;z+=1.15f)
-        rod({end,first+.9f,z},{end,top-.1f,z},.022f,metal,6);
     // Broad rear steps open onto the side garden path.
     { Place rear(trs({end+.35f,0,-1.5f},90)); stair(0,1.1f,7.8f,3,.15f,.33f,0,trim); }
     // Short return from the curved brick edge to the pavilion's first balcony.
     block(-.35f,first-.28f,-7.0f,0,first,-.05f,concrete);
+}
+
+// Covered passage replacing the grass slot behind the oval/front rooms.
+// Its balcony and grilled entrance follow project_2 6.42.32 PM.
+void frontGapCorridor() {
+    const float left=3.5f,right=25.3f,back=-11.3f,front=-7.0f;
+    const float first=PLINTH+STOREY_TALL,roof=PLINTH+2*STOREY_TALL;
+    block(left,0,back,right,PLINTH,front,walkway);
+    block(left,first-.28f,back,right,first,front,concrete);
+    block(left,first,back,right,first+.015f,front,walkway);
+    block(left,roof,back,right,roof+.36f,front,trim);
+    for(float x=4.0f;x<right;x+=4.4f) {
+        block(x-.14f,PLINTH,front-.3f,x+.14f,roof,front,concrete);
+        for(float ceiling : {first-.28f,roof}) {
+            block(x-.12f,ceiling-.22f,back,x+.12f,ceiling,front,concrete);
+            cylinder(x+1.2f,ceiling-.15f,-8.9f,.08f,.15f,.08f,lampBlack,12);
+        }
+    }
+    for(float level : {PLINTH,first}) {
+        block(left,level,back+.1f,right,level+.012f,back+.23f,darkTile);
+        block(left,level,front-.23f,right,level+.012f,front-.1f,darkTile);
+        for(float x=4.8f;x<right;x+=2.4f)
+            block(x,level,-9.3f,x+.48f,level+.012f,-8.82f,darkTile);
+    }
+    // Longitudinal return fills the marked strip beside the shop wing.
+    // It meets the transverse passage at z=-11.3 without a wall or step.
+    const float inner=21.75f,end=-20.76f,width=right-inner;
+    block(inner,0,end,right,PLINTH,back,walkway);
+    block(inner,first-.28f,end,right,first,back,concrete);
+    block(inner,first,end,right,first+.015f,back,walkway);
+    block(inner,roof,end,right,roof+.36f,back,trim);
+    for(float level : {PLINTH,first}) {
+        for(float x : {inner+.12f,right-.22f})
+            block(x,level,end,x+.10f,level+.018f,back,darkTile);
+        for(float z=end+.8f;z<back;z+=2.0f)
+            block(23.2f,level,z,23.68f,level+.018f,z+.48f,darkTile);
+    }
+    for(float z=end+.2f;z<back;z+=3.1f) {
+        if(z<ENTRY_BACK_Z||z>ENTRY_FRONT_Z)
+            block(right-.15f,PLINTH,z-.12f,right,roof,z+.12f,concrete);
+        for(float ceiling : {first-.28f,roof}) {
+            block(inner,ceiling-.22f,z-.12f,right,ceiling,z+.12f,concrete);
+            cylinder(23.5f,ceiling-.15f,z+.7f,.08f,.15f,.08f,lampBlack,12);
+        }
+    }
+    // Rear-facing entrance and balcony at the end of the continuous route.
+    block(inner,0,end-5.0f,31.0f,.035f,end-1.05f,paving);
+    Place entry(trs({right,0,end},180));
+    balconyPanel(.15f,width-.15f,first);
+    for(float x : {.12f,width-.12f}) block(x-.12f,PLINTH,-.18f,x+.12f,roof,.16f,trim);
+    block(.12f,first-.5f,-.2f,width-.12f,first-.28f,.2f,trim);
+    auto grille=[&](float width,float height) {
+        for(float x=0;x<=width;x+=.16f) rod({x,PLINTH,0},{x,PLINTH+height,0},.014f,metal,6);
+        for(float y=PLINTH;y<=PLINTH+height;y+=.18f) rod({0,y,0},{width,y,0},.014f,metal,6);
+    };
+    { Place fixed(translation({.26f,0,.06f})); grille(1.35f,2.65f); }
+    { Place open(trs({width-.26f,0,.06f},90)); grille(1.3f,2.65f); }
+    for(float y=PLINTH+2.8f;y<first-.52f;y+=.15f)
+        rod({.26f,y,.06f},{width-.26f,y,.06f},.014f,metal,6);
+    stair(width/2,1.05f,width,3,.15f,.3f,0,trim);
+}
+
+// A straight route on the relocated door axis, through the removed ground
+// window bay and room block, joining the courtyard corridor at the far end.
+void straightEntryCorridor() {
+    const float x0=COURTYARD_RIGHT-.3f,x1=27.8f;
+    const float ceiling=PLINTH+STOREY_TALL-.28f;
+    block(x0,0,ENTRY_BACK_Z,x1,PLINTH,ENTRY_FRONT_Z,walkway);
+    block(x0,ceiling,ENTRY_BACK_Z,x1,ceiling+.28f,ENTRY_FRONT_Z,concrete);
+    for(float z : {ENTRY_BACK_Z+.12f,ENTRY_FRONT_Z-.22f})
+        block(x0,PLINTH,z,x1,PLINTH+.024f,z+.10f,darkTile);
+    for(float x=x0+1;x<x1;x+=2.4f)
+        block(x,PLINTH,-18.95f,x+.45f,PLINTH+.024f,-18.50f,darkTile);
+    for(float x=1.0f;x<26.0f;x+=3.5f) {
+        block(x-.1f,ceiling-.2f,ENTRY_BACK_Z,x+.1f,ceiling,ENTRY_FRONT_Z,concrete);
+        cylinder(x+1.1f,ceiling-.15f,-18.725f,.08f,.15f,.08f,lampBlack,12);
+    }
+}
+
+// Street-facing entrance from 6.42.32 PM: open grille doors below the
+// brick-inset balcony, with transom bars and diagonal soffit beams.
+void photoCorridorEntrance() {
+    Place face(trs({27.65f,0,ENTRY_FRONT_Z},90));
+    const float width=3.05f,first=PLINTH+STOREY_TALL;
+    const Material grilleMetal{{.57f,.59f,.53f},.35f};
+    auto grille=[&](float w,float h) {
+        for(float x : {0.0f,w}) block(x-.025f,PLINTH,-.025f,x+.025f,PLINTH+h,.025f,grilleMetal);
+        for(float y=PLINTH;y<PLINTH+h;y+=.13f)
+            block(0,y,-.018f,w,y+.018f,.018f,grilleMetal);
+        for(float x=.18f;x<w;x+=.35f)
+            block(x,PLINTH,-.02f,x+.018f,PLINTH+h,.02f,grilleMetal);
+    };
+    { Place fixed(translation({.05f,0,0})); grille(1.20f,2.45f); }
+    { Place opened(trs({width-.08f,0,0},90)); grille(1.05f,2.45f); }
+    for(float y=PLINTH+2.55f;y<first-.31f;y+=.15f)
+        block(.05f,y,-.02f,width-.05f,y+.018f,.02f,grilleMetal);
+    block(0,PLINTH+2.48f,-.06f,width,PLINTH+2.55f,.06f,grilleMetal);
+    for(float x : {0.0f,width}) block(x-.06f,PLINTH,-.08f,x+.06f,first-.28f,.08f,trim);
+    for(float x=0;x<width;x+=1.0f) {
+        rod({x,first-.3f,0},{x+.48f,first-.3f,-.8f},.04f,trim,6);
+        rod({x+.48f,first-.3f,-.8f},{std::min(x+1.0f,width),first-.3f,0},.04f,trim,6);
+    }
+    // Small pots flank the clear opening without occupying its threshold.
+    for(float x : {-.22f,width+.22f}) {
+        frustum({x,PLINTH,.28f},.11f,.16f,.23f,redPaint,12);
+        for(int k=0;k<5;++k) {
+            float a=2*PI*k/5;
+            rod({x,PLINTH+.23f,.28f},{x+.16f*std::cos(a),PLINTH+.62f,.28f+.16f*std::sin(a)},.018f,grass,5);
+        }
+    }
 }
 
 void cafeteria() {
@@ -1234,7 +1343,11 @@ void exteriorElevations() {
     // Fill the old cafeteria position with continuous gallery bays and keep
     // the rear gallery clear of the relocated entrance, stairs, and signage.
     { Place p(trs({TALL_EXTERIOR_X,0,-20.0f},90));
-      galleryWing({5,CAFETERIA_SETBACK/5,3,STOREY_TALL,2.8f,0,0,0,false,PLINTH+STOREY_TALL-.32f},131.0f); }
+      windowedWing({1,4.0f,3,STOREY_TALL,3,1.0f,false,false,true,true},131.0f); }
+    { Place p(trs({TALL_EXTERIOR_X,0,-24.0f},90));
+      windowedWing({2,4.0f,3,STOREY_TALL,3,1.0f,false,false,false,true},134.0f); }
+    { Place p(trs({TALL_EXTERIOR_X,0,-32.0f},90));
+      galleryWing({2,4.0f,3,STOREY_TALL,2.8f,0,0,0,false,PLINTH+STOREY_TALL-.32f},146.0f); }
     { Place p(trs({TALL_EXTERIOR_X,0,CAFETERIA_FRONT_Z},90)); cafeteria(); cafeteriaRightBlock(); }
     { Place p(trs({TALL_EXTERIOR_X,0,CAFETERIA_REAR_Z},90));
       windowedWing({1,56.0f+CAFETERIA_REAR_Z,3,STOREY_TALL,1,1.0f,false,false,false,true},111.0f); }
@@ -1272,12 +1385,13 @@ void landscaping() {
     for(float z=-85.0f;z<22.0f;z+=9.5f) broadleafTree(49.8f,z,7.0f+hash1(z)*2.0f,4.2f,z);
     gazebo(35.0f,CAFE_WORLD_Z+4.5f,0);
     fanPalm(38.0f,CAFE_WORLD_Z+3.5f,5.5f,30); fanPalm(31.5f,CAFE_WORLD_Z+3.0f,4.0f,31);
-    broadleafTree(34.7f,-14.0f,4.6f,1.7f,32); broadleafTree(36.5f,-59.0f,5.0f,2.0f,33);
+    broadleafTree(34.7f,-11.0f,4.6f,1.7f,32); broadleafTree(36.5f,-59.0f,5.0f,2.0f,33);
     coconutPalm(37.5f,-60.0f,12.0f,3,2.5f,34); broadleafTree(34.7f,-8.0f,4.0f,1.6f,35);
     araucaria(25.0f,-2.8f,6.4f,92);
-    hedge({35.2f,0,-23.3f},{35.2f,0,-5.0f},.65f,.7f,93);
-    for(float z : {-7.0f,-17.5f,-22.0f}) shrub(34.2f,z,.60f,94+z,true);
-    shrub(30.8f,CAFE_WORLD_Z+1.5f,.55f,36); shrub(34.2f,-19.0f,.5f,37);
+    hedge({35.2f,0,-23.3f},{35.2f,0,ENTRY_BACK_Z-.5f},.65f,.7f,93);
+    hedge({35.2f,0,ENTRY_FRONT_Z+.5f},{35.2f,0,-5.0f},.65f,.7f,94);
+    for(float z : {-7.0f,-15.0f,-22.0f}) shrub(34.2f,z,.60f,94+z,true);
+    shrub(30.8f,CAFE_WORLD_Z+1.5f,.55f,36); shrub(34.2f,-16.0f,.5f,37);
     // West exterior lawn (photos 1-4).
     coconutPalm(-35.0f,-5.0f,11.0f,5,3.0f,40); coconutPalm(-37.0f,-19.0f,10.0f,7,3.3f,41);
     araucaria(-33.0f,-12.0f,9.0f,42); araucaria(-33.5f,-31.0f,8.0f,43); arecaPalm(-32.0f,-24.0f,44);
@@ -1306,6 +1420,9 @@ void buildScene() {
     stage();
     exteriorElevations();
     rightSideWing();
+    frontGapCorridor();
+    photoCorridorEntrance();
+    straightEntryCorridor();
     landscaping();
 }
 
@@ -1349,6 +1466,7 @@ const char* sceneFragmentSource=R"(
     uniform vec3 sunDirection;
     uniform sampler2D shadowMap;
     uniform int shadowsEnabled;
+    uniform int highlightRolloff;
     out vec4 pixel;
 
     const vec3 sunColor=vec3(1.0,0.96,0.88);
@@ -1411,6 +1529,8 @@ const char* sceneFragmentSource=R"(
             float fresnel=0.08+0.62*pow(1.0-max(dot(n,viewDirection),0.0),3.0);
             color=mix(color,env,fresnel*0.35);
         }
+        // Orthographic elevations/plan: soften overexposed sunlit white roofs instead of clipping.
+        if(highlightRolloff==1) color=mix(color,0.78+0.22*(1.0-exp(-(color-0.78)/0.22)),step(0.78,color));
         float distanceToEye=length(cameraPosition-worldPosition);
         float fog=1.0-exp(-max(distanceToEye-45.0,0.0)*0.006);
         pixel=vec4(mix(color,fogColor,fog*0.65),1.0);
@@ -1448,7 +1568,11 @@ GLuint makeProgram(const char* vertexSource,const char* fragmentSource) {
 // ---------------------------------------------------------------------------
 // Camera: orbit around a target, plus presets matching the reference photos.
 // ---------------------------------------------------------------------------
-struct CameraPreset { const char* name; Vec3 eye, target; float fov; };
+// orthoHalf > 0 selects an orthographic projection of that half-height
+// (architectural elevations and plan); 0 keeps the perspective fov.
+struct CameraPreset { const char* name; Vec3 eye, target; float fov; float orthoHalf=0; };
+// Building footprint (without site and planting): x -27.5..32.9, z -60.3..3.2, top 13.8.
+constexpr float PLAN_CENTER_X=2.7f,PLAN_CENTER_Z=-28.5f;
 const CameraPreset presets[]={
     {"Main entrance (photo 26)",               {3.5f,1.7f,31.0f},{4.0f,4.3f,-2.0f},55},
     {"Curved SWC facade (photo 25)",           {8.0f,1.6f,17.5f},{15.0f,4.6f,0.0f},60},
@@ -1461,11 +1585,19 @@ const CameraPreset presets[]={
     {"Aerial overview",                        {48.0f,58.0f,52.0f},{0.0f,0.0f,-20.0f},50},
     {"Right-side shops (project_2)",           {44.0f,2.1f,8.0f},{27.0f,3.9f,-15.0f},62},
     {"Cafeteria and right-hand stair (project_2)",{42.0f,2.0f,CAFE_WORLD_Z+1.0f},{26.0f,4.0f,CAFE_WORLD_Z-10.0f},64},
+    {"Right-hand entrance and straight corridor",{37.0f,1.8f,-19.1f},{5.0f,2.1f,-19.1f},64},
+    // Orthographic views; the eye sits just outside the planting so distant site trees are clipped.
+    {"Front elevation",                        {PLAN_CENTER_X,10.0f,30.0f},{PLAN_CENTER_X,10.0f,PLAN_CENTER_Z},50,10.0f},
+    {"Back elevation",                         {PLAN_CENTER_X,10.0f,-72.0f},{PLAN_CENTER_X,10.0f,PLAN_CENTER_Z},50,10.0f},
+    {"Left elevation",                         {-40.0f,10.0f,PLAN_CENTER_Z+4.5f},{PLAN_CENTER_X,10.0f,PLAN_CENTER_Z+4.5f},50,10.0f},
+    {"Right elevation",                        {46.0f,10.0f,PLAN_CENTER_Z+4.5f},{PLAN_CENTER_X,10.0f,PLAN_CENTER_Z+4.5f},50,10.0f},
+    {"Top view (plan)",                        {PLAN_CENTER_X,40.0f,PLAN_CENTER_Z+6.0f},{PLAN_CENTER_X,0.0f,PLAN_CENTER_Z+6.0f},50,40.0f},
 };
 constexpr int presetCount=sizeof(presets)/sizeof(presets[0]);
 
 Vec3 cameraTarget{0,0,0};
 float cameraYaw=0,cameraPitch=0,cameraDistance=30,cameraFov=55;
+float cameraOrthoRatio=0; // orthographic half-height per unit of distance, so zoom still works
 float modelRotation=0.0f,modelScale=1.0f;
 Vec3 modelTranslation{0.0f,0.0f,0.0f};
 bool rotating=false,panning=false,shadowsOn=true;
@@ -1476,6 +1608,7 @@ void applyPreset(int index) {
     const CameraPreset& p=presets[index];
     Vec3 d=p.eye-p.target;
     cameraTarget=p.target; cameraDistance=length(d); cameraFov=p.fov;
+    cameraOrthoRatio=p.orthoHalf/cameraDistance;
     cameraPitch=std::asin(d.y/cameraDistance)*180.0f/PI;
     cameraYaw=std::atan2(d.x,d.z)*180.0f/PI;
     std::cout<<"View: "<<p.name<<'\n';
@@ -1546,6 +1679,8 @@ void input(GLFWwindow* window,float delta) {
     for(int i=0;i<9;++i) if(pressed(window,GLFW_KEY_1+i)) applyPreset(i);
     if(pressed(window,GLFW_KEY_0)) applyPreset(9);
     if(pressed(window,GLFW_KEY_V)) applyPreset(10);
+    if(pressed(window,GLFW_KEY_H)) applyPreset(11);
+    for(int i=0;i<5;++i) if(pressed(window,GLFW_KEY_F1+i)) applyPreset(12+i);
     if(pressed(window,GLFW_KEY_B)) shadowsOn=!shadowsOn;
 }
 
@@ -1564,15 +1699,17 @@ bool writeScreenshot(const char* path,int width,int height) {
 } // namespace
 
 int main(int argc,char** argv) {
-    // Optional: image_project.exe --capture <view 1-11> <file.ppm> renders one frame to a file.
+    // Optional: image_project.exe --capture <view 1-17> <file.ppm> [width height] renders one frame to a file.
     int captureView=-1; const char* capturePath=nullptr;
-    if(argc==4&&std::strcmp(argv[1],"--capture")==0) { captureView=std::atoi(argv[2])-1; capturePath=argv[3]; }
+    int windowWidth=1280,windowHeight=800;
+    if((argc==4||argc==6)&&std::strcmp(argv[1],"--capture")==0) { captureView=std::atoi(argv[2])-1; capturePath=argv[3]; }
+    if(capturePath&&argc==6) { windowWidth=std::max(std::atoi(argv[4]),64); windowHeight=std::max(std::atoi(argv[5]),64); }
 
     if(!glfwInit()) { std::cerr<<"Could not initialize GLFW.\n"; return EXIT_FAILURE; }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,3); glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,3);
     glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE); glfwWindowHint(GLFW_SAMPLES,4);
     if(capturePath) glfwWindowHint(GLFW_VISIBLE,GLFW_FALSE);
-    GLFWwindow* window=glfwCreateWindow(1280,800,"KUET Student Welfare Center - Interactive 3D View",nullptr,nullptr);
+    GLFWwindow* window=glfwCreateWindow(windowWidth,windowHeight,"KUET Student Welfare Center - Interactive 3D View",nullptr,nullptr);
     if(!window) { glfwTerminate(); return EXIT_FAILURE; }
     glfwMakeContextCurrent(window); glfwSwapInterval(1);
     if(!load_opengl_functions(reinterpret_cast<void*(*)(const char*)>(glfwGetProcAddress))) {
@@ -1608,6 +1745,7 @@ int main(int argc,char** argv) {
     GLint sunLocation=glGetUniformLocation(program,"sunDirection");
     GLint shadowMapLocation=glGetUniformLocation(program,"shadowMap");
     GLint shadowsLocation=glGetUniformLocation(program,"shadowsEnabled");
+    GLint rolloffLocation=glGetUniformLocation(program,"highlightRolloff");
     GLint depthLightLocation=glGetUniformLocation(depthProgram,"lightSpace");
     GLint depthModelLocation=glGetUniformLocation(depthProgram,"model");
 
@@ -1628,14 +1766,20 @@ int main(int argc,char** argv) {
     const Mat4 lightSpace=multiply(orthographic(-95,95,-95,95,1,320),lookAt(sceneCenter+sun*150.0f,sceneCenter,{0,1,0}));
 
     applyPreset(captureView>=0&&captureView<presetCount ? captureView : 0);
-    std::cout<<"Keys 1-9: original views; 0: right-side shops; V: stair and balcony; B: shadows.\n";
+    std::cout<<"Keys 1-9: original views; 0: shops; V: cafeteria; H: connecting corridor;\n"
+             "F1-F5: front/back/left/right/top orthographic views; B: shadows.\n";
     double previous=glfwGetTime(); int frame=0;
     while(!glfwWindowShouldClose(window)) {
         double now=glfwGetTime(); float delta=static_cast<float>(std::min(now-previous,.05)); previous=now;
         if(!capturePath) input(window,delta);
         Vec3 eye=cameraEye();
-        Mat4 projection=perspective(radians(cameraFov),static_cast<float>(framebufferWidth)/framebufferHeight,.15f,450.0f);
-        Mat4 viewProjection=multiply(projection,lookAt(eye,cameraTarget,{0,1,0}));
+        float aspect=static_cast<float>(framebufferWidth)/framebufferHeight,half=cameraOrthoRatio*cameraDistance;
+        Mat4 projection=cameraOrthoRatio>0 ? orthographic(-half*aspect,half*aspect,-half,half,.15f,450.0f)
+                                           : perspective(radians(cameraFov),aspect,.15f,450.0f);
+        // Looking straight down, "up" on screen is the building's rear (-Z) so the front faces the viewer.
+        float yaw=radians(cameraYaw);
+        Vec3 up=cameraPitch>89.5f ? Vec3{-std::sin(yaw),0,-std::cos(yaw)} : Vec3{0,1,0};
+        Mat4 viewProjection=multiply(projection,lookAt(eye,cameraTarget,up));
         // Composite object transformation: translation * rotation * scaling.
         Mat4 model=multiply(translation(modelTranslation),multiply(rotationY(radians(modelRotation)),scaling(modelScale)));
         Mat3 normals=normalMatrix(model);
@@ -1661,6 +1805,7 @@ int main(int argc,char** argv) {
         glUniform3f(sunLocation,sun.x,sun.y,sun.z);
         glUniform1i(shadowMapLocation,0);
         glUniform1i(shadowsLocation,shadowsOn ? 1 : 0);
+        glUniform1i(rolloffLocation,cameraOrthoRatio>0 ? 1 : 0);
         glBindTexture(GL_TEXTURE_2D,shadowTexture);
         glDrawArrays(GL_TRIANGLES,0,static_cast<GLsizei>(mesh.size()));
 

@@ -19,7 +19,7 @@ Implementation status
 - Composite transformations: T * R * S local transforms combined parent * child on a transform stack
   (windows inside wings, wings inside the site), plus the interactive whole-model transform.
 - Vector/matrix operations: custom Vec3/Mat4/Mat3 math including the inverse-transpose normal matrix.
-- Camera: orbit, pan, walk, and zoom with a custom look-at matrix; eleven viewpoints, including two from project_2.
+- Camera: orbit, pan, walk, and zoom with a custom look-at matrix; twelve viewpoints, including the covered connecting corridor.
 - Projection: custom perspective projection matrix (and orthographic projection for the sun's shadow map).
 - Interaction: mouse/keyboard camera controls, view presets, and model translation/rotation/scaling.
 - Lighting: ambient + diffuse + specular Phong calculation with per-material specular strength.
