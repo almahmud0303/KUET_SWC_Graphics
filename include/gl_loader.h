@@ -68,7 +68,6 @@ extern void (APIENTRY *glUniformMatrix4fv)(GLint, GLsizei, GLboolean, const GLfl
 extern void (APIENTRY *glUniform3f)(GLint, GLfloat, GLfloat, GLfloat);
 extern void (APIENTRY *glUniformMatrix3fv)(GLint, GLsizei, GLboolean, const GLfloat *);
 extern void (APIENTRY *glUniform1i)(GLint, GLint);
-extern void (APIENTRY *glUniform1f)(GLint, GLfloat);
 extern void (APIENTRY *glGenFramebuffers)(GLsizei, GLuint *);
 extern void (APIENTRY *glBindFramebuffer)(GLenum, GLuint);
 extern void (APIENTRY *glFramebufferTexture2D)(GLenum, GLenum, GLenum, GLuint, GLint);

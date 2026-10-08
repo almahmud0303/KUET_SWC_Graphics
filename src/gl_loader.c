@@ -27,7 +27,6 @@ void (APIENTRY *glUniformMatrix4fv)(GLint, GLsizei, GLboolean, const GLfloat *);
 void (APIENTRY *glUniform3f)(GLint, GLfloat, GLfloat, GLfloat);
 void (APIENTRY *glUniformMatrix3fv)(GLint, GLsizei, GLboolean, const GLfloat *);
 void (APIENTRY *glUniform1i)(GLint, GLint);
-void (APIENTRY *glUniform1f)(GLint, GLfloat);
 void (APIENTRY *glGenFramebuffers)(GLsizei, GLuint *);
 void (APIENTRY *glBindFramebuffer)(GLenum, GLuint);
 void (APIENTRY *glFramebufferTexture2D)(GLenum, GLenum, GLenum, GLuint, GLint);
@@ -64,7 +63,6 @@ int load_opengl_functions(void *(*get_proc_address)(const char *)) {
     LOAD(glUniform3f);
     LOAD(glUniformMatrix3fv);
     LOAD(glUniform1i);
-    LOAD(glUniform1f);
     LOAD(glGenFramebuffers);
     LOAD(glBindFramebuffer);
     LOAD(glFramebufferTexture2D);

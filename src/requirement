@@ -15,6 +15,7 @@ KUET SWC 3D Graphics Project Requirements
 Implementation status
 
 - 3D primitives: boxes, tapered and elliptical cylinders, rods, spheres, ellipsoids, quads, triangles, and annuli.
+- Canonical bases: reusable unit cube, cylinder, sphere, cone, frustum, tube, plane, triangle and ring in src/geometry/canonical_shapes.h; shared transforms in src/geometry/geometry_math.h.
 - Transformations: custom translation, X/Y rotation, uniform and non-uniform scaling, and matrix multiplication.
 - Composite transformations: T * R * S local transforms combined parent * child on a transform stack
   (windows inside wings, wings inside the site), plus the interactive whole-model transform.
