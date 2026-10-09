@@ -53,7 +53,7 @@ const CameraPreset presets[]={
     {"Corridor-end stair (3.07.57 AM)",          {1.3f,2.0f,-27.0f},{1.4f,2.3f,-46.0f},70},
     // road/ photographs: the street behind the SWC (Shift+V, Shift+B).
     {"Stalls across the back road (road photos)", {4.0f,1.7f,-65.2f},{2.0f,2.2f,-80.0f},74},
-    {"Boundary wall and gate from the road (road photos)",{-14.0f,1.7f,-72.5f},{12.0f,1.6f,-63.5f},70},
+    {"Boundary wall and gate from the road (road photos)",{-8.0f,1.7f,-75.4f},{16.0f,1.6f,-63.5f},70},
     {"Campus gate on the east road (gate photo)",   {44.0f,1.7f,-69.6f},{44.0f,1.9f,-63.5f},72},
     {"Open path from the portico to the curved stair",{9.1f,1.8f,-2.2f},{12.4f,2.0f,1.8f},84},
     {"Traffic on the back road",                    {-34.0f,7.0f,-62.0f},{2.0f,.6f,-71.0f},68},
