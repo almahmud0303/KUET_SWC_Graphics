@@ -22,7 +22,9 @@ void stageCourtyardWing() {
     block(-.4f,top,-4.1f,length+.4f,top+.35f,1.1f,pale);
     for(int b=0;b<7;++b) {
         float x=b*STAGE_BAY;
-        { Place edge(translation({0,0,.35f})); balconyPanel(x+.20f,x+STAGE_BAY-.20f,first); }
+        // The last bay is open where the link from the terrace arrives (wingLink()).
+        { Place edge(translation({0,0,.35f}));
+          balconyPanel(x+.20f,b==6 ? TERRACE_EDGE_X-STAGE_WING_LEFT-.15f : x+STAGE_BAY-.20f,first); }
         if(b<4) {
             // Pale lower wall, narrow barred clerestories and paired brick
             // panels on the upper wall, behind the projecting white fins.
@@ -70,24 +72,27 @@ void courtyard() {
     stageCourtyardWing();
     // Shorten the courtyard return so it stops beside the aligned corridor.
     { Place p(trs({COURTYARD_RIGHT,0,-14.5f},180));
-      galleryWing({4,(COURTYARD_RIGHT+19.5f)/4,2,STOREY_TALL,3.2f,0,0,0x01u,true,0},51.0f); }
+      galleryWing({4,(COURTYARD_RIGHT+19.5f)/4,2,STOREY_TALL,3.2f,0,0,0x01u,true,0,0,0x01u},51.0f); }
     entranceCorridor();
     // Move corridor, rooms, stairs, and roof details as one complete block.
     { Place aligned(translation(TALL_BLOCK_OFFSET));
       { Place p(trs({17.3f,0,-44.3f},-90));
-        galleryWing({6,29.8f/6,3,STOREY_TALL,3.2f,0x15u,0x10u,0x20u,true,0},41.0f); }
-      connectedStairwell();
-      block(17.3f,0,-55.25f,21.25f,11.7f,-44.3f,concrete);
+        // Bays 0-2 are the glazed cafeteria wall, bay 4 is the straight passage;
+        // bays 0-4 meet the first-floor terrace instead of a balcony edge.
+        galleryWing({6,29.8f/6,3,STOREY_TALL,3.2f,0,0x17u,0x20u,true,0,0x3Fu,0x40u},41.0f); }
+      corridorLinkHall();
+      northStairwell();
+      block(17.3f,0,-55.25f,21.25f,11.7f,-50.1f,concrete);
       // True ground-floor opening on the new doorway axis, through the room mass.
       const float passageBack=ENTRY_BACK_Z-TALL_BLOCK_OFFSET.z;
       const float passageFront=ENTRY_FRONT_Z-TALL_BLOCK_OFFSET.z;
       // Keep the upper floors and rear mass; hollow the ground floor for rooms.
         const float roomBack=rooms::back-TALL_BLOCK_OFFSET.z;
-        block(21.25f,0,CAFETERIA_FRONT_Z,25.45f+TALL_EXTRA_WIDTH,11.7f,roomBack,concrete);
+        // The bays between the cafeteria and the rooms belong to cafeteriaHall().
         block(21.25f,rooms::ceiling,roomBack,25.45f+TALL_EXTRA_WIDTH,11.7f,passageBack,concrete);
       block(21.25f,0,passageFront,25.45f+TALL_EXTRA_WIDTH,11.7f,-20.0f,concrete);
       block(21.25f,PLINTH+STOREY_TALL-.28f,passageBack,25.45f+TALL_EXTRA_WIDTH,11.7f,passageFront,concrete);
-      block(21.25f,0,CAFETERIA_REAR_Z,26.5f+TALL_EXTRA_WIDTH,11.7f,CAFETERIA_FRONT_Z,concrete);
+      // The cafeteria bays are hollow at ground level: see cafeteriaHall().
       block(21.25f,0,-55.25f,25.45f+TALL_EXTRA_WIDTH,11.7f,CAFETERIA_REAR_Z,concrete);
       // New front rooms fill the widened area beside the unchanged stairwell.
       block(25.5f,0,-20.0f,TALL_EXTERIOR_X-.75f,11.7f,-14.95f,concrete);

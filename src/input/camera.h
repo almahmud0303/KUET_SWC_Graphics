@@ -8,7 +8,7 @@ namespace swc { namespace app {
 extern const int presetCount;
 extern Vec3 cameraTarget,modelTranslation;
 extern float cameraYaw,cameraPitch,cameraDistance,cameraFov,cameraOrthoRatio,modelRotation,modelScale;
-extern bool shadowsOn;
+extern bool shadowsOn,rayTraceRequested;
 extern int framebufferWidth,framebufferHeight;
 
 void applyPreset(int index);

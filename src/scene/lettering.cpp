@@ -13,6 +13,13 @@ namespace swc { namespace app {
 const char* glyph(char c) {
     switch(c) {
     case 'A': return "0111010001111111000110001";
+    case 'B': return "1111010001111101000111110";
+    case 'G': return "0111110000101111000101111";
+    case 'H': return "1000110001111111000110001";
+    case 'M': return "1000111011101011000110001";
+    case 'O': return "0111010001100011000101110";
+    case 'P': return "1111010001111101000010000";
+    case 'Y': return "1000101010001000010000100";
     case 'C': return "0111110000100001000001111";
     case 'D': return "1111010001100011000111110";
     case 'E': return "1111110000111101000011111";

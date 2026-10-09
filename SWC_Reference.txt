@@ -1,6 +1,12 @@
 KUET STUDENT WELFARE CENTER (SWC)
 Architectural reference for the 3D graphics project
-Based on the 30 photographs in project and 14 additional photos in project_2
+Based on 68 photographs: 30 in project (exterior and courtyard), 14 in
+project_2 (right-side shop wing and cafeteria corner) and 24 in project_3
+(interior walkthrough). Sections 17-20 record what project_3 adds and how the
+interior spaces relate to the exterior already described. Section 21 records
+three later layout images that move the stair behind the curved wall,
+section 22 the corrections from re-reading every photograph, section 23 the
+final shop and curved-wall positions, and section 24 the street behind the SWC.
 
 RIGHT-SIDE UPDATE (project_2, September 29)
 
@@ -442,8 +448,8 @@ These corrections supersede earlier inferred positions in this reference:
   joins the three-storey block. Its main references are 3.07.57 AM and
   3.07.59 AM (1): pale tiles with dark accents, square columns, ceiling beams,
   lights, and open bays toward the lawn.
-- The model uses matching upper landing heights and a return stair to connect
-  all three floors. Stair dimensions and exact placement remain modeling choices.
+- The stair no longer stands beside the entrance axis. See section 21: it is
+  behind the curved SWC wall, and its former bay is open walking space.
 - The central entrance doorway is open through to the rear circulation.
 - The three-storey block is brought forward and aligned with the entrance door.
   The main route runs straight through the door into its corridor, without a
@@ -452,3 +458,539 @@ These corrections supersede earlier inferred positions in this reference:
   The corridor stays on the entrance axis while room widths and roofs increase.
 - The cafeteria is set farther back along the three-storey wing. The current
   model uses an 8-unit setback, including its external stairs and paved approach.
+
+17. PROJECT_3 WALKTHROUGH PHOTOGRAPHS (8 OCTOBER 2026)
+
+The 24 photographs in project_3 were taken in one walk: in through the main
+entrance, along the ground floor, up the stair, around the first floor, and
+out by the right-hand service side. All files share the prefix
+"WhatsApp Image 2026-10-08 at " and suffix ".jpeg". Numbers follow file order.
+
+Ground floor
+
+01. 6.14.05 PM
+    Entrance lobby under the double-height canopy. A tall terracotta relief
+    wall of square carved panels stands beside the timber entrance; a white
+    wall to its left carries a timber double door under an "INDOOR GAMES"
+    plate and a tournament banner. A large board of coloured department cells
+    leans on the terracotta wall, with a yellow ornamental strip at its edge.
+    Cream floor tiles carry two black and two grey accent tiles.
+
+02. 6.14.06 PM (1)
+    Through the timber entrance frame, with louvred panels above the door
+    head. Beyond it a tiled hall runs past a supermarket front on the right.
+    The ceiling is a grid of white ribs crossing each bay diagonally.
+
+03. 6.14.06 PM (2)
+    The supermarket front: a long red fascia with white "Shwapno" lettering
+    in English and Bengali, glazed bays with aluminium frames, shelves of
+    coloured packets, a red-and-yellow "big sale" stand, and the diagonal rib
+    ceiling. Floor accents: one grey tile, two corner-touching black tiles.
+
+04. 6.14.06 PM
+    Indoor-games hall seen from its timber doorway. A long white room with
+    barred windows down the left wall and more on the right, square columns,
+    ceiling fans, fluorescent battens, table-tennis tables, an attendant's
+    desk, and stacks of plastic chairs just inside the door on the left.
+
+05. 6.14.07 PM
+    Narrow ground corridor looking along its length: white walls, a high
+    window band on the left, posters, a fire extinguisher, one grey tile.
+
+06. 6.14.08 PM (1)
+    Corridor wall of repeated window bays: white frames and mullions, a
+    transom line, white security grilles and a low red-brick panel below each
+    window. A timber door stands at the far left.
+
+07. 6.14.08 PM (2)
+    Cafeteria dining hall. A broad room divided by square columns and deep
+    beams, windows with grilles on both long sides, many dark-topped tables
+    on steel frames with slatted chairs, ceiling fans between the beams,
+    fluorescent battens, and a service counter with a menu band at the far
+    left. The polished floor mirrors the windows and lights.
+
+08. 6.14.08 PM
+    Long corridor open to the lawn on the left, with window bays and brick
+    panels on the right, square columns, black and grey accent tiles.
+
+09. 6.14.09 PM
+    Corridor junction: window bays with brick panels at right, a doorway and
+    a blue notice, an open hall and the stair beyond at left.
+
+10. 6.14.10 PM (1)
+    Wide ground hall. Timber double doors at the far left, a run of window
+    bays, and at the right a dog-leg stair with a steel balustrade under tall
+    landing windows. A black strip follows the open edge on the left. The
+    floor shows the clearest accent group: two black tiles meeting at a
+    corner, with a grey tile on each side.
+
+11. 6.14.10 PM
+    The same hall closer to the stair, with a timber-framed room door at
+    right below a dark louvre panel.
+
+12. 6.14.11 PM (1)
+    The ground corridor is two bays wide here: square columns down the
+    middle, a black tile strip along the column line, window bays with brick
+    panels along the inner wall, and a grey roller shutter at the left. A
+    second stair shows at the right.
+
+First floor
+
+13. 6.14.11 PM (2)
+    First-floor terrace. Deep white portal frames (a column at the outer edge
+    and a beam back to the building) span an open tiled terrace. Rows of red
+    planter pots line both sides; a blue tandem bench stands near the edge.
+    The parapet is pale with a long brick inset and a steel rail. The second
+    floor above shows brick-inset balcony panels.
+
+14. 6.14.11 PM
+    The same terrace from under the gallery roof, with a black tile strip at
+    the threshold and the stepped parapet end at the right.
+
+15. 6.14.12 PM
+    Terrace and courtyard lawn together: the portal frames, the parapet, and
+    the two-storey stage wing across the grass.
+
+16. 6.14.13 PM (1)
+    Open first-floor hall: two timber double doors with louvred panels above
+    them, blue tandem seats, a green waste bin, a column at the open edge,
+    and a black-and-grey accent group in the floor.
+
+17. 6.14.13 PM (2)
+    The same hall looking toward the gallery; glossy floor reflections.
+
+18. 6.14.13 PM
+    Hall and gallery junction, with a black tile strip along the column line.
+
+19. 6.14.14 PM (1)
+    Stair seen from above: concrete flights, a stainless balustrade of five
+    horizontal rails, a tall glazed landing window with white mullions, and
+    narrow louvre slots in the white wall.
+
+20. 6.14.14 PM
+    First-floor corner open to the outside, with a brick-inset parapet.
+
+21. 6.14.15 PM
+    Stair landing: tall window, louvred door head, a poster stand, rails.
+
+Right-hand service side
+
+22. 6.14.16 PM (1)
+    Side approach: red pavers with tan square groups, a tall square column,
+    a grilled doorway under a brick-inset balcony, a bank kiosk at the left,
+    AC units, and the three-storey window wall with brick panels at right.
+
+23. 6.14.16 PM
+    Road-side shopfronts behind a clipped hedge, under the diagonal rib
+    soffit; a roller shutter at the left bay.
+
+24. 6.14.17 PM
+    The same side approach from farther back, on the paved path.
+
+18. HOW THE INTERIOR RELATES TO THE EXTERIOR
+
+Read with +X to the right when facing the main entrance, +Z toward the front
+plaza, and one unit as roughly one metre. Positions are model coordinates
+chosen to agree with the photographs, not surveyed dimensions.
+
+- Lobby (photo 01, with 3.08.03 AM from the plaza). The lobby is the floor
+  under the entrance canopy. The terracotta wall faces the plaza and is
+  wide, about 4.5; it stands in the plane of the timber entrance, which is
+  immediately to its right after a yellow strip. On its left it meets a
+  full-height white wall at a right angle. That white wall is the SIDE wall
+  of the lobby, the end wall of the front-left wing, and it carries the
+  INDOOR GAMES door close to the corner with the terracotta wall. Beyond
+  the white wall's front edge the colonnade and the wing's window bays
+  continue to the left. So the games hall is the ground floor of the
+  front-left wing, entered from the side, and its windows are the wing's own.
+- Entrance hall and shop (photos 02, 03). Photo 02 looks through the timber
+  entrance: the hall runs straight ahead and the Shwapno front is on the
+  RIGHT, parallel to the way in. Photo 03 faces that front square-on, with
+  the timber entrance at its right-hand end and a corridor leaving at its
+  left-hand end. So the shop occupies the bays east of the entrance hall,
+  not the space behind the curved wall. The diagonal rib ceiling covers the
+  hall in front of it.
+- Entrance axis. The corridor of the three-storey block lies on the entrance
+  door's centreline. From the doors a walker passes the shop hall on the
+  right, then the open link hall (section 21), then the straight passage to
+  the right-hand entrance (photos 22, 24), and continues beside the courtyard.
+- Two-bay corridor and terrace (photos 12-15). Beside the courtyard the
+  ground corridor is two bays wide. The outer bay is one storey high and its
+  roof is the first-floor terrace. The portal frames stand on the outer
+  column line and tie back to the three-storey block at second-floor level.
+  These are the "projecting white frames" seen from the lawn in photos
+  3.07.57 AM (1) and 3.08.00 AM: from outside they read as frames in front
+  of the facade, from inside as a roofless terrace.
+- Stairs. Two stairs are established. Photos 3.07.57 AM and 10 show a
+  dog-leg stair at the far end of the long courtyard corridor, straight
+  ahead, with tall landing windows; it serves all three floors. Section 21
+  adds the stair inside the curved wall, which joins the ground and first
+  floors. Photo 21 shows a large window from that stair toward the entrance
+  portico, with the lobby and its tournament board outside.
+- Cafeteria (photos 06, 07, 09). The dining hall is the ground floor behind
+  the CAFETERIA sign of photo 3.07.55 AM, and it continues back along the
+  courtyard corridor. Photos 06 and 09 are taken in that corridor: its inner
+  wall is a run of glazed bays (brick panel, barred window, transom, top
+  light) through which the dining tables are visible. It has two ways in:
+  the signed road-side entrance and an opening from the corridor.
+- First-floor hall (photos 16-18). The hall is the upper level of the route
+  behind the curved wall, directly above the shop hall. The stair arrives in
+  its front wall, above the side corridor. Its timber doors are in the wall toward the front of the building.
+- Right-hand side (photos 22-24). The grilled doorway under the brick-inset
+  balcony is the right-hand end of the straight passage; the paved path runs
+  from it through the hedge opening to the campus road.
+
+Vertical relationships: ground floor at the raised walkway level (0.45);
+first floor 3.6 above it; second floor a further 3.6 in the three-storey
+block. Ground ceilings sit about 3.3 above the floor, below a 0.32 slab.
+
+These placements are inferences from one walkthrough. The games hall, shop
+and dining hall positions follow from doors and signs visible in the photos;
+their exact depths and column counts do not.
+
+19. INTERIOR MATERIALS, FITTINGS AND LIGHT
+
+Floor. Cream-white square tiles of about 0.6 x 0.6 on a straight grid with
+thin grey joints, polished enough to mirror windows and lights. Accents are
+single tiles replaced by black or mid-grey ones. The repeated group is two
+black tiles touching at a corner with a grey tile either side. A continuous
+black strip one tile wide follows open edges and column lines.
+
+Walls and ceilings. White painted plaster; ceilings are flat white with deep
+beams on the column grid. The shop hall alone has the diagonal rib ceiling.
+
+Windows from inside. A red-brick panel about 0.85 high, a projecting sill,
+then glazing in white frames with a transom about 2.25 above the floor and a
+white grille of close horizontal and vertical bars. Daylight makes the
+glazing the brightest surface in most interior photographs.
+
+Timber. Doors and frames are a warm red-brown with a slight sheen. Double
+doors have a small glazed panel in each leaf and a louvred panel above.
+
+Suggested base RGB values in the range 0 to 1:
+White plaster     (0.90, 0.90, 0.86)
+Floor tile        (0.88, 0.86, 0.80)
+Black accent tile (0.10, 0.10, 0.11)
+Grey accent tile  (0.36, 0.36, 0.38)
+Terracotta relief (0.66, 0.30, 0.15)
+Timber            (0.36, 0.17, 0.08)
+Stainless steel   (0.62, 0.65, 0.64)
+Shop fascia red   (0.82, 0.07, 0.06)
+Seat blue         (0.10, 0.30, 0.70)
+Planter red       (0.70, 0.14, 0.12)
+
+Light. Covered spaces are lit by daylight from the open side and windows,
+and by black cylindrical ceiling fixtures and fluorescent battens. A sun and
+a sky-ambient term alone leave them too dark and too blue. Model each fixture
+as a point light whose strength falls off with distance, and let window
+glazing, battens and lit signs emit their own colour.
+
+Fittings to include, with the photograph that shows each:
+- Table-tennis tables, stacked chairs, attendant's desk, fans       (04)
+- Shop shelving, packets, sale stand, red fascia with lettering     (03)
+- Dining tables with slatted chairs, service counter, menu band     (07)
+- Roller shutter on the shop's flank in the side corridor          (05, 12)
+- Planter pots, blue tandem bench, brick-inset parapet with rail    (13-15)
+- Timber double doors with louvred heads, blue seats, waste bin     (16)
+- Steel balustrade, tall landing window on the curved wall         (19, 21)
+
+Temporary items (posters, banners, parked vehicles, people, trolleys, the
+suitcase in photo 01) are not part of the building and are left out.
+
+20. GRAPHICS TECHNIQUES FOR THE INTERIOR
+
+The interior photographs need three things the exterior model did not:
+
+1. Local lights. A point light at position L with colour C lights a surface
+   point P with normal n by C * a(d) * max(n . l, 0), where d = |L - P|,
+   l = (L - P)/d and a(d) = 1/(kc + kl d + kq d^2). A smooth cut-off at a
+   chosen radius keeps each light local.
+
+2. Emission. Glazing seen against daylight, fluorescent battens and lit
+   signs show their own colour regardless of the lighting on them.
+
+3. Reflection. The polished floor mirrors windows, lights and furniture
+   (photos 07, 16, 17). Phong highlights cannot reproduce a mirror image.
+   Ray tracing does: follow the eye ray to the floor, reflect it about the
+   normal with r = d - 2(d . n)n, and add what the reflected ray sees,
+   weighted by the Fresnel reflectance F = F0 + (1 - F0)(1 - cos t)^5, which
+   is weak looking straight down and strong at a grazing angle, as in the
+   photographs. The same rays give exact shadows from the sun and from each
+   fixture, and contact darkening under furniture.
+
+Camera positions matching the walkthrough: lobby (01), games hall (04), shop
+front (03), dining hall (07), two-bay corridor (12), terrace (13), first-floor
+hall (16), the side corridor to the stair, and the stair behind the curve. Interior photographs were taken with
+a wide lens; a vertical field of view of 75-82 degrees reproduces the framing.
+
+What remains uncertain: room partitions behind closed doors, the exact
+number of column bays in each hall, the service rooms behind the counter, and
+the second-floor interior, which the photographs do not show.
+
+21. STAIR BEHIND THE CURVED WALL (LAYOUT IMAGES, 9 OCTOBER 2026)
+
+Three images in the project root set the stair position. They are layout
+instructions from the user, not additional survey photographs.
+
+corridor-with-door.png
+    The side corridor of photo 05 (6.14.07 PM): it starts at
+    the corner of the Shwapno front, which is at the right edge of the view.
+    The shop's flank is on the right with a grey roller shutter and an AC
+    unit; the left wall has a high band of barred windows; black cylinder
+    lights hang from the ceiling; two grey accent tiles lie in the floor. The
+    far end is a grilled doorway to the outside.
+
+corridor-with-stair.png
+    The same corridor with the far doorway replaced by a straight flight of
+    steps with handrails. This is the required arrangement: the corridor
+    beside the shop leads to the stair.
+
+stair-behind-oval.png
+    The stair seen from above. A white curved wall sweeps around the flight;
+    a stainless balustrade of horizontal rails follows the steps; a tall
+    window with white mullions lights the landing; the floor is the same
+    cream tile.
+
+Relationships these images establish:
+
+- The stair is behind the curved brick SWC wall, in the space between that
+  wall and the building. The curved surface in stair-behind-oval.png is the
+  inside of the same curve that carries the lettering outside.
+- The shop is at the corner. Standing in the shop hall and facing the curved
+  wall, the Shwapno front is on the right and the side corridor opens
+  immediately to its left. The shop therefore stops short of the corridor,
+  and its flank wall, not its front, carries the roller shutter.
+- Order along the route: shop hall, side corridor, first flight, landing
+  against the curved wall, return flight, first-floor hall. The first-floor
+  arrival is directly above the side corridor.
+- The stair no longer stands beside the entrance axis. That bay becomes open
+  floor: a walking space joining the courtyard corridor to the shop hall on
+  the ground and first floors.
+- The right-hand grilled entrance of photos 22 and 24 is unchanged and still
+  ends the straight passage; corridor-with-door.png shows the same kind of
+  doorway.
+
+Modelling notes. The curve has centre (15, -4.5) and inner radius about
+7.06, so the inside face lies at z = -4.5 + sqrt(7.06^2 - (x - 15)^2). The
+side corridor occupies x from 14.6 to 17.8 and is about 4 long before the
+first riser, shorter than in the images, because the curved wall is only
+that far behind the shop hall. Each flight has 10 risers of 0.18 and treads
+of 0.28, with the landing at half-storey height. The landing window is on the
+inside lining only; the exterior brickwork is not opened.
+
+This stair joins only the ground and first floors. The second floor of the
+three-storey block is reached by the corridor-end stair of section 22.
+
+22. RE-EVALUATION OF ALL PHOTOGRAPHS (9 OCTOBER 2026)
+
+Every photograph in project, project_2 and project_3 was compared again with
+the model from a matching viewpoint. Most relationships held. Four did not.
+
+1. Lobby. Project_3 photo 01, confirmed by the user, fixes the arrangement:
+   the terracotta wall is wide and faces the plaza; the white wall meets it
+   at a right angle on its left and is the side wall of the lobby; the
+   INDOOR GAMES door is in that side wall, near the corner. An earlier
+   reading that put the door in a wall facing the plaza was wrong. The
+   front-left wing therefore shows four window bays, then a blank white bay
+   whose return is the door wall, not five window bays.
+
+2. Cafeteria and corridor. Project_3 photos 06 and 09 show dining tables
+   through the corridor windows. The dining hall is therefore not confined
+   to the bays behind the CAFETERIA sign: it runs alongside the courtyard
+   corridor, and that wall is glass, not a solid wall with doors.
+
+3. Corridor-end stair. Photo 3.07.57 AM looks down the courtyard corridor,
+   lawn on the left and doors on the right, to a stair straight ahead with a
+   landing and tall windows. Project_3 photos 10 and 11 show the same kind of
+   stair from the adjoining hall. This stair is separate from the one behind
+   the curved wall and is the route to the second floor.
+
+4. Colour. Painted concrete photographs nearly white, about
+   (0.89, 0.91, 0.88), and the curved wall's brick is a lighter, redder
+   terracotta than the other brickwork, about (0.60, 0.26, 0.17).
+
+Confirmed without change: the curved wall's flare, bands, louvre strips and
+lettering; the long front colonnade; the courtyard stage wing; the cafeteria
+front with its external stair; the right-side shop wing, covered corridor
+and grilled entrance of project_2; the first-floor terrace under the portal
+frames; the gazebo, roads, hedges and planting.
+
+Still not established by any photograph: the inside of the second floor, the
+rooms behind closed doors, the kitchen behind the cafeteria counter, and the
+exact number and width of the glazed bays beside the cafeteria.
+
+23. SHOP, CORRIDOR AND CURVED WALL: FINAL POSITIONS (9 OCTOBER 2026)
+
+Set by the user from project_3 photos 02, 03, 19 and 21 and a view of the
+model. They supersede the shop position in sections 18 and 21.
+
+- Shwapno is on the right of the entrance hall. Entering by the timber
+  doors and walking straight on, its long red fascia runs beside the walker
+  on the right. Facing the front, the star panel and the name are at the
+  left, the Bengali name toward the right, and the timber entrance is past
+  the right-hand end.
+- The corridor follows the shop. From the shop's far end a corridor runs to
+  the right, with the shop's flank and a roller shutter on one side
+  (corridor-with-door.png). It leads to the right-hand grilled entrance and,
+  turning back toward the front, to the hall behind the curved wall.
+- The stair is inside the curved wall. A side corridor from that hall
+  reaches a double-height stair hall whose outer wall is the white inside
+  face of the curve, with a tall mullioned window (photo 19). The end wall
+  of the stair hall beside the portico has a large window through which the
+  lobby and its tournament board are seen (photo 21).
+- The curved wall stands forward. Its centre is one unit further toward the
+  plaza than first modelled, at (15, -3.5), so there is room between it and
+  the building to reach the stair.
+
+Modelling notes: shop front along x = 3.5 from z = -16.4 to -7.4, with three
+glazed bays and one open doorway; shop depth 3.65. Stair flights start at
+z = -2.0 with the landing at z = 0.8, half a storey up.
+
+24. THE STREET BEHIND THE SWC (ROAD FOLDER, 25 PHOTOGRAPHS)
+
+All files share the prefix "WhatsApp Image 2026-10-09 at " and suffix ".jpeg".
+Most were taken at dusk, so colours of lit signboards are reliable and the
+colours of unlit surfaces are not.
+
+Order going away from the SWC, as described by the user and shown in the
+photographs: boundary wall, walking strip, road, divider, stalls.
+
+- Boundary wall (2.54.52 AM, 2.54.53 AM). White square piers at regular
+  spacing with a white base and coping; red-brick panels between them, lower
+  than the piers. A white steel gate of diagonal lattice, in two leaves, one
+  standing open. Blue pipes lie along the base in places.
+- Walking strip and road (2.54.44 AM series, 2.54.46 AM series). A bare
+  earth strip beside the wall, then a worn asphalt road with patches of
+  exposed earth and shallow potholes.
+- Divider (2.54.44 AM series, 2.54.46 AM). A low grey concrete wall, about
+  knee to waist height, down the middle of the road between the two lanes,
+  with gaps where people cross to the stalls. (Position set by the user.)
+- Stalls (2.54.47 AM to 2.54.51 AM). A continuous row of small single-storey
+  shops: raised concrete floor with a step, three walls and an open front,
+  a corrugated tin lean-to roof on timber posts projecting over the front,
+  a signboard across the top (red, pink, blue, yellow and green recur),
+  shelves packed with coloured packets, hanging strips of sachets at the
+  front, a counter, a bare bulb. Plastic chairs and stools, red and blue,
+  stand in front of the tea and snack stalls. Named examples include a
+  general store, a grocery, tea stalls and mobile-banking agents.
+- Town behind (2.54.44 AM series, 2.54.47 AM (1), 2.54.48 AM). Three- to
+  five-storey buildings painted blue, pink, cream and grey, with window
+  grids and projecting balconies. Utility poles and many overhead cables.
+- One photograph (2.54.47 AM) shows the SWC cafeteria entrance again and
+  adds nothing new to section 8.
+
+Not established: the compass side of the campus this street is on, its
+distance from the building, and the true sequence of individual stalls.
+The model places it behind the building at the user's direction.
+
+Campus gate (gate photograph supplied with a view of the model, 9 October
+2026). Where the campus road on the right-hand side of the SWC reaches the
+boundary wall there is a gate, not an open road end. Two wide weathered
+white piers carry cream globe lamps on black bases. Between them hang two
+stainless steel leaves: the lower panel of each is close diagonal bars, the
+upper panel a white notice board with a blue border and two lines of red
+lettering. Seen from the street, the right-hand leaf also carries a tall
+blue-and-white admission banner. The leaves leave a gap in the middle wide
+enough for two people, and brick steps cross the threshold. The model
+places this gate across the east campus road in the line of the boundary
+wall, and continues the wall to meet its piers on both sides.
+
+Stair form and entry (user direction with a view of the model, 9 October
+2026). The end wall of the stair hall beside the entrance portico is not a
+window wall: it is an open path, so the stair hall is entered directly from
+the lobby. The stair itself takes the form of stair-behind-oval.png: a
+single flight that follows the inside of the curved wall, with a solid white
+curved balustrade on its inner side rising with the steps and a stainless
+rail above it. It arrives at first-floor level on a bridge that crosses the
+hall. This replaces the straight dog-leg flights described in section 21
+and the portico-facing window described in section 23.
+
+First-floor front terrace (user direction with photo 6.14.12 PM, 9 October
+2026). On the upper floor, the block between the entrance and the curved
+wall is not an enclosed room behind a blank wall. It is an open terrace of
+the kind shown in photos 13-15: pale tiled floor open to the sky, deep white
+portal frames (a column on the outer edge and a beam back to the hall), a
+pale parapet with a brick inset and a steel rail, rows of red planter pots
+and a blue tandem bench. The first-floor hall opens onto it along its whole
+front edge. In the model its outer edge overlooks the stair hall inside the
+curved wall and, at the entrance end, the portico. The earlier timber doors
+in that wall (section 19, photo 16) are omitted, since the wall is gone.
+
+Upper-floor room west of the entrance corridor (user direction with a view
+of the model, 9 October 2026). Standing on the upper entrance corridor and
+looking west, the blank wall ahead is the side of the front-left wing, with
+the top of the terracotta wall showing at its left. To the right, where the
+model had an open balcony gallery with a row of pillars along the
+courtyard, there is a room. It is enclosed on the courtyard side by a wall
+of barred windows, one per structural bay, and is entered by a door from
+the corridor. The pillars survive only as pilasters in that wall. Its
+furnishing in the model (desks, chairs, a board) is assumed.
+
+Correction to the note above on the first-floor front terrace: that terrace
+was added from a misreading of the same view and was not requested for the
+block between the entrance and the curved wall. It remains in the model
+pending the user's decision.
+
+Upper hall: final reading (user direction with photo 6.14.13 PM (1),
+9 October 2026). The two preceding notes are withdrawn: there is no open
+terrace over the block between the entrance and the curved wall, and the
+gallery west of the entrance corridor is not an enclosed room. Both changes
+were removed from the model.
+
+Photo 16 is taken on the upper entrance corridor looking west, and it shows
+the hall as it should be. Straight ahead is a white wall, the side of the
+front-left wing, with two timber double doors side by side. Each has a
+small glazed panel in each leaf and a dark louvred panel above; a small
+room label is fixed between them and a mat lies before the first. To the
+right the hall is open to the courtyard: one square column, a low railed
+parapet, and beyond it the stage wing with its brick backdrop and, further
+right, the first-floor terrace with its planters. Three blue tandem seats
+stand with their backs to the parapet and a green wheeled bin stands by the
+column. The floor carries the usual group of two black and two grey tiles.
+This replaces the earlier placement of these doors in the hall above the
+shops (section 18, First-floor hall).
+
+Upper hall width (user direction, 9 October 2026). The hall is wider than
+first modelled: the white door wall continues past the corner where a
+pillar stood, and no pillar interrupts the hall there. The model extends
+the wall 4.25 further along the hall and omits the two corner columns
+through this storey only; they remain below and above. The seats and the
+bin stand against the extended wall, and the open side with its railed
+parapet begins beyond it.
+
+Link between the wings (user direction with a view of the model, 9 October
+2026). At the courtyard corner the three-storey block and the stage wing
+are joined, on both the ground floor and the upper floor: a person can walk
+from the corridor and terrace of one to the gallery of the other. The model
+had left a strip of lawn between them at ground level and a parapet across
+the terrace end above. It now has a paved link below and a bridge above,
+with a parapet on the courtyard side. The upper floor of the stage wing is
+0.15 lower than that of the three-storey block (storey heights 3.45 and
+3.6), so the bridge meets it with one shallow step; the photographs do not
+show how the real junction handles this.
+
+Traffic on the back road (user direction with two reference images,
+9 October 2026). Easybikes and vans move along the road behind the SWC, and
+sometimes a bus.
+
+- Easybike: a battery three-wheeler. Red body with a rounded nose over the
+  single front wheel, a tall curved windscreen, a flat canopy on slim posts,
+  open sides, a driver's seat in front and passenger benches behind, white
+  covers on the rear wheels.
+- Van: in local usage a cycle-van, not a motor van. A bicycle front (one
+  spoked wheel, handlebar, saddle) pulling a flat steel bed over two spoked
+  wheels, loaded with bags and boxes.
+- Bus: no reference image was supplied; a plain single-deck bus is assumed.
+
+The model keeps traffic on the left of the divider in each direction, runs
+easybikes and vans continuously, and brings the bus past about a quarter of
+the time. Speeds, counts and the bus livery are assumptions.
+
+Road past the gate, and people (user direction, 9 October 2026). The public
+road continues beyond the corner of the building so that it passes in front
+of the campus gate; the campus road ends at the gate and meets it there.
+The footpath, divider and stalls continue with it, and the divider is open
+opposite the gate. People move about inside and outside the SWC: on the
+plaza and entrance steps, in the corridors and halls, on the upper terrace,
+on the lawn, along the campus road, and on the street. Their number, routes
+and clothing in the model are assumed.

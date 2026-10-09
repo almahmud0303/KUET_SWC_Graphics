@@ -207,14 +207,14 @@ void landscaping() {
     // Curved-facade lawn: areca palm, painted coconut palm, ixora (photo 25).
     arecaPalm(13.5f,6.5f,11); coconutPalm(20.5f,9.0f,11.0f,3,1.0f,12);
     block(18.5f,0,7.3f,22.8f,.3f,7.5f,brick); block(22.6f,0,7.3f,22.8f,.3f,11.2f,brick);
-    shrub(10.8f,4.6f,.55f,13,true); shrub(24.5f,4.2f,.6f,14,true); shrub(16.5f,3.9f,.45f,15,true);
+    shrub(10.8f,4.6f,.55f,13,true); shrub(24.5f,4.2f,.6f,14,true); shrub(16.5f,5.0f,.45f,15,true);
     croton(12.0f,4.2f,16); croton(22.0f,3.8f,17); broadleafTree(27.5f,10.0f,6.0f,3.5f,18);
     broadleafTree(11.0f,11.0f,3.5f,1.8f,19);
     // East road edge: hedges, painted trees, gazebo and fan palms (5, 6, 9, 10).
-    hedge({39.3f,0,-92},{39.3f,0,CAFE_WORLD_Z-15.5f},1.0f,1.1f,20); hedge({39.3f,0,1.5f},{39.3f,0,14.4f},1.0f,1.1f,21);
-    hedge({39.3f,0,17.1f},{39.3f,0,25.5f},1.0f,1.1f,22); hedge({48.2f,0,-92},{48.2f,0,26},1.0f,1.1f,23);
+    hedge({39.3f,0,-62.5f},{39.3f,0,CAFE_WORLD_Z-15.5f},1.0f,1.1f,19); hedge({39.3f,0,1.5f},{39.3f,0,14.4f},1.0f,1.1f,21);
+    hedge({39.3f,0,17.1f},{39.3f,0,25.5f},1.0f,1.1f,22); hedge({48.2f,0,-62.0f},{48.2f,0,26},1.0f,1.1f,23);
     hedge({30.5f,0,CAFE_WORLD_Z+1.4f},{38.0f,0,CAFE_WORLD_Z+1.4f},.9f,1.0f,24);
-    for(float z=-85.0f;z<22.0f;z+=9.5f) broadleafTree(49.8f,z,7.0f+hash1(z)*2.0f,4.2f,z);
+    for(float z=-56.5f;z<22.0f;z+=9.5f) broadleafTree(49.8f,z,7.0f+hash1(z)*2.0f,4.2f,z);
     gazebo(35.0f,CAFE_WORLD_Z+4.5f,0);
     fanPalm(38.0f,CAFE_WORLD_Z+3.5f,5.5f,30); fanPalm(31.5f,CAFE_WORLD_Z+3.0f,4.0f,31);
     broadleafTree(34.7f,-11.0f,4.6f,1.7f,32); broadleafTree(36.5f,-59.0f,5.0f,2.0f,33);
@@ -232,14 +232,14 @@ void landscaping() {
     for(int k=0;k<5;++k) broadleafTree(STAGE_WING_LEFT-3.5f,-38.0f-k*4.0f,4.5f,2.1f,60+k);
     shrub(-31.5f,-16.0f,.5f,66,true); shrub(-31.8f,-41.0f,.45f,67);
     // North side trees.
-    for(int k=0;k<6;++k) broadleafTree(-20.0f+k*9.0f,-62.0f-hash1(k*5.1f)*5.0f,8.0f,5.0f,70+k);
+    for(int k=0;k<6;++k) broadleafTree(-20.0f+k*9.0f,-59.2f-hash1(k*5.1f)*1.8f,7.0f,3.4f,70+k);
     // Courtyard: sparse small trees and flowering shrubs near the edges (13-22).
     broadleafTree(STAGE_WING_LEFT-1.8f,-23.0f,7.0f,2.9f,80,false); broadleafTree(STAGE_WING_LEFT-2.5f,-40.0f,5.8f,2.3f,81,false);
-    broadleafTree(14.2f+TALL_BLOCK_OFFSET.x,-21.0f,3.2f,1.5f,82,false);
+    broadleafTree(TERRACE_EDGE_X-2.6f,-21.0f,3.2f,1.5f,82,false);
     // Keep the central stage lawn clear, as in the wide reference photograph.
-    broadleafTree(-2.0f,-17.0f,3.0f,1.4f,84,false); broadleafTree(-4.0f,-42.0f,3.0f,1.4f,85,false);
-    shrub(STAGE_WING_LEFT-.8f,-36.0f,.55f,86,true); shrub(-2.5f,-42.3f,.5f,87,true); shrub(-5.2f,-42.5f,.5f,88,true);
-    shrub(15.2f+TALL_BLOCK_OFFSET.x,-30.0f,.5f,89); shrub(-15.2f,-23.0f,.4f,90); shrub(-4.0f,-16.2f,.45f,91,true);
+    broadleafTree(TERRACE_EDGE_X-2.4f,-17.6f,3.0f,1.4f,84,false); broadleafTree(-7.0f,-42.2f,3.0f,1.4f,85,false);
+    shrub(STAGE_WING_LEFT-.8f,-36.0f,.55f,86,true); shrub(-8.4f,-41.2f,.5f,87,true); shrub(-6.0f,-40.6f,.5f,88,true);
+    shrub(TERRACE_EDGE_X-1.5f,-30.0f,.5f,89); shrub(-15.2f,-23.0f,.4f,90); shrub(TERRACE_EDGE_X-1.6f,-15.7f,.45f,91,true);
 }
 
 }} // namespace swc::app

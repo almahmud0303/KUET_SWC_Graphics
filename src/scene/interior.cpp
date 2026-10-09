@@ -1,6 +1,7 @@
 #include "scene/interior.h"
 
 #include "geometry/mesh.h"
+#include "room_navigation.h"
 #include "scene/components.h"
 #include "scene/layout.h"
 #include "scene/lettering.h"
@@ -17,6 +18,9 @@ const Material wallWhite{{.90f,.91f,.88f},.08f};
 // The shop ends at SHOP_RIGHT_X; the side corridor and the stair behind the
 // curved wall occupy STAIR_LEFT_X..STAIR_RIGHT_X.
 const float SHOP_RIGHT_X=14.4f,STAIR_LEFT_X=14.6f,STAIR_RIGHT_X=17.8f;
+// The terracotta recess starts at LOBBY_LEFT_X. Its left return is the side wall
+// of the games hall, which carries the INDOOR GAMES door centred on GAMES_DOOR_Z.
+const float LOBBY_LEFT_X=-4.3f,GAMES_DOOR_Z=-4.85f;
 
 // A light source without new geometry, for bays that already have a fixture.
 void glow(float x,float y,float z,float radius=8.0f,float power=1.0f) {
@@ -110,30 +114,41 @@ void timberDoor(float x,float floorY,float w) {
 // wing carries the INDOOR GAMES doorway.
 // ---------------------------------------------------------------------------
 void entranceLobby() {
-    const float roofUnder=PLINTH+2*STOREY,wz=-5.95f;
+    const float roofUnder=PLINTH+2*STOREY,wz=-5.95f,tx0=LOBBY_LEFT_X,tx1=.05f,tTop=6.0f;
     const Material reliefDark{{.50f,.21f,.10f},.05f},reliefLight{{.76f,.38f,.20f},.06f};
-    block(-3.0f,0,-6.3f,-1.1f,PLINTH,-4.6f,walkway);
-    block(-3.3f,roofUnder,-6.3f,-2.65f,roofUnder+SLAB,-3.6f,trim);
-    block(-3.0f,PLINTH,-6.3f,-1.1f,roofUnder,wz,terracotta);
+    // Blank white bay facing the plaza, in line with the wing's window wall.
+    // The INDOOR GAMES door is round the corner, in the side wall (gamesHall()).
+    block(-7.8f,PLINTH,-3.35f,tx0,roofUnder,-2.94f,wallWhite);
+    // The colonnade roof and its free column continue across this bay.
+    block(-7.8f,roofUnder,-3.6f,-2.6f,roofUnder+SLAB,1.9f,trim);
+    block(-7.8f,roofUnder-.18f,1.62f,-2.6f,roofUnder,1.9f,trim);
+    block(tx0,roofUnder,-6.3f,-2.65f,roofUnder+SLAB,-3.6f,trim);
+    box(-3.0f,(PLINTH+roofUnder)/2,1.0f,.56f,roofUnder-PLINTH,.56f,trim);
+    cylinder(-5.4f,roofUnder-.07f,-.6f,.08f,.14f,.08f,lampBlack,10);
+
+    // Terracotta relief wall facing the plaza, set back 2.6 m behind the white bay.
+    block(tx0,0,-6.3f,-1.1f,PLINTH,-4.6f,walkway);
+    block(tx0,PLINTH,-6.3f,tx1,tTop,wz,terracotta);
+    block(tx0,tTop,-6.3f,tx1,roofUnder,wz,wallWhite);
     // Square relief panels: recessed joints with a few proud carved tiles.
-    for(float y=PLINTH+.55f;y<roofUnder-.2f;y+=.62f) block(-3.0f,y,wz,-1.1f,y+.025f,wz+.02f,reliefDark);
-    for(float x=-2.72f;x<-1.2f;x+=.52f) block(x,PLINTH+2.6f,wz,x+.022f,roofUnder,wz+.02f,reliefDark);
-    for(int k=0;k<14;++k) {
-        float x=-2.9f+hash1(k*3.7f)*1.5f,y=PLINTH+2.9f+hash1(k*5.3f)*3.4f;
+    for(float y=PLINTH+.55f;y<tTop-.1f;y+=.62f) block(tx0,y,wz,tx1,y+.025f,wz+.02f,reliefDark);
+    for(float x=tx0+.30f;x<tx1-.1f;x+=.52f) block(x,PLINTH+2.4f,wz,x+.022f,tTop,wz+.02f,reliefDark);
+    for(int k=0;k<30;++k) {
+        float x=tx0+.1f+hash1(k*3.7f)*(tx1-tx0-.5f),y=PLINTH+2.5f+hash1(k*5.3f)*(tTop-PLINTH-2.9f);
         block(x,y,wz,x+.26f,y+.26f,wz+.035f,reliefLight);
     }
-    block(-1.24f,PLINTH+.25f,wz,-1.12f,PLINTH+3.3f,wz+.03f,Material{{.92f,.78f,.18f},.15f});
-    for(float x : {-2.6f,-2.05f,-1.5f}) cylinder(x,roofUnder-.07f,-5.5f,.07f,.14f,.07f,lampBlack,10);
+    block(tx1-.15f,PLINTH+.25f,wz,tx1-.03f,PLINTH+3.3f,wz+.03f,Material{{.92f,.78f,.18f},.15f});
+    for(float x : {-3.6f,-2.2f,-.8f}) cylinder(x,roofUnder-.07f,-5.3f,.07f,.14f,.07f,lampBlack,10);
     // Tournament board: white panel, blue heading and coloured department cells.
     const Color cells[4]={{.16f,.52f,.34f},{.74f,.20f,.48f},{.22f,.30f,.62f},{.88f,.52f,.16f}};
-    block(-2.92f,PLINTH+.15f,wz+.03f,-1.30f,PLINTH+2.25f,wz+.08f,Material{{.94f,.94f,.90f},.2f});
-    block(-2.80f,PLINTH+1.92f,wz+.08f,-1.42f,PLINTH+2.10f,wz+.09f,Material{{.16f,.22f,.42f},.2f});
-    block(-2.80f,PLINTH+.28f,wz+.08f,-1.42f,PLINTH+.40f,wz+.09f,Material{{.12f,.42f,.26f},.2f});
-    for(int r=0;r<4;++r) for(int c=0;c<4;++c)
-        block(-2.80f+c*.35f,PLINTH+.52f+r*.33f,wz+.08f,-2.50f+c*.35f,PLINTH+.78f+r*.33f,wz+.09f,
+    block(-3.70f,PLINTH+.15f,wz+.03f,-1.20f,PLINTH+2.25f,wz+.08f,Material{{.94f,.94f,.90f},.2f});
+    block(-3.58f,PLINTH+1.92f,wz+.08f,-1.32f,PLINTH+2.10f,wz+.09f,Material{{.16f,.22f,.42f},.2f});
+    block(-3.58f,PLINTH+.28f,wz+.08f,-1.32f,PLINTH+.40f,wz+.09f,Material{{.12f,.42f,.26f},.2f});
+    for(int r=0;r<4;++r) for(int c=0;c<6;++c)
+        block(-3.58f+c*.38f,PLINTH+.52f+r*.33f,wz+.08f,-3.26f+c*.38f,PLINTH+.78f+r*.33f,wz+.09f,
               Material{cells[(r*3+c)%4],.2f});
     accentCluster(2.0f,PLINTH,-2.2f);
-    glow(.4f,roofUnder-1.0f,-2.6f,10.0f,.8f);
+    glow(-1.0f,roofUnder-1.0f,-2.6f,10.0f,.8f); glow(-2.0f,PLINTH+3.1f,-2.4f,9.0f,.8f);
 }
 
 // ---------------------------------------------------------------------------
@@ -141,14 +156,15 @@ void entranceLobby() {
 // wing. Windows line both long walls; stacked chairs wait beside the door.
 // ---------------------------------------------------------------------------
 void gamesHall() {
-    const float x0=-26.25f,x1=-3.0f,z0=-10.55f,z1=-3.35f,cy=3.6f,top=7.8f;
-    const float dz0=-5.5f,dz1=-4.0f,dh=PLINTH+2.5f;
+    const float x0=-26.25f,x1=LOBBY_LEFT_X,z0=-10.55f,z1=-3.35f,cy=3.6f,top=7.8f;
+    const float dz0=GAMES_DOOR_Z-.75f,dz1=GAMES_DOOR_Z+.75f,dh=PLINTH+2.5f;
     block(x0,0,z0,x1,PLINTH,z1,walkway);
     block(x0,cy,z0,x1-.3f,top,z1,concrete);
     block(x0,cy-.02f,z0,x1-.3f,cy,z1,plaster);            // white ceiling
     block(x0,PLINTH,z0,x1-.3f,cy,z0+.3f,plaster);
     block(x0,PLINTH,z0,x0+.3f,cy,z1,plaster);
-    // Full-height white end wall facing the lobby, with the doorway cut out.
+    // 6.14.05 PM: the full-height white side wall of the lobby, at a right
+    // angle to the terracotta wall, with the INDOOR GAMES doorway near the corner.
     block(x1-.3f,0,z0,x1,top,dz0,wallWhite);
     block(x1-.3f,0,dz1,x1,top,z1,wallWhite);
     block(x1-.3f,dh,dz0,x1,top,dz1,wallWhite);
@@ -157,12 +173,12 @@ void gamesHall() {
     // Both leaves stand open against the inside wall.
     block(x1-1.02f,PLINTH,dz0-.14f,x1-.3f,dh,dz0-.09f,timber);
     block(x1-1.02f,PLINTH,dz1+.09f,x1-.3f,dh,dz1+.14f,timber);
-    block(x1,dh+.22f,dz0-.45f,x1+.035f,dh+1.05f,dz1+.45f,Material{{.93f,.93f,.90f},.15f});
-    { Place sign(trs({x1+.036f,0,(dz0+dz1)/2},90));
-      flatText(latinGlyphs("INDOOR GAMES"),0,dh+.62f,0,.030f,.045f,.012f,signDark);
-      block(-1.0f,dh+.36f,0,1.0f,dh+.42f,.012f,Material{{.16f,.22f,.42f},.2f}); }
+    block(x1,dh+.22f,dz0-.30f,x1+.035f,dh+1.05f,dz1+.40f,Material{{.93f,.93f,.90f},.15f});
+    { Place sign(trs({x1+.036f,0,GAMES_DOOR_Z+.05f},90));
+      flatText(latinGlyphs("INDOOR GAMES"),0,dh+.62f,0,.028f,.045f,.012f,signDark);
+      block(-.95f,dh+.36f,0,.95f,dh+.42f,.012f,Material{{.16f,.22f,.42f},.2f}); }
 
-    for(int b=0;b<5;++b) {
+    for(int b=0;b<4;++b) {
         float cx=-27.0f+4.8f*b+2.4f;
         { Place south(trs({cx+1.8f,0,z1},180)); interiorWindow(3.6f,PLINTH,3); }
         if(b>0) { Place north(translation({cx-1.8f,0,z0+.3f})); interiorWindow(3.6f,PLINTH,3); }
@@ -172,20 +188,20 @@ void gamesHall() {
         block(x-.18f,cy-.30f,z0,x+.18f,cy,z1,plaster);
     }
     for(float x : {-10.5f,-15.5f,-20.5f}) tableTennis(x,-8.0f);
-    for(float x : {-5.5f,-10.5f,-15.5f,-20.5f}) {
+    for(float x : {-6.0f,-10.5f,-15.5f,-20.5f}) {
         ceilingFan(x,cy,-8.0f);
         tube(x,cy,-4.9f,1.2f,true,8.5f,1.05f);
     }
     // Stacked plastic chairs to the left of the door, and the attendant's desk.
     for(int stack=0;stack<4;++stack) {
-        float x=-4.75f+stack*.36f;
+        float x=-6.05f+stack*.36f;
         Color c=stack%2 ? Color{.62f,.16f,.14f} : Color{.36f,.24f,.16f};
         for(int k=0;k<11;++k) box(x,PLINTH+.44f+k*.085f,-3.63f,.30f,.03f,.34f,Material{c,.3f,INTERIOR});
         box(x,PLINTH+.22f,-3.63f,.26f,.44f,.30f,Material{{.20f,.20f,.20f},.3f,INTERIOR});
     }
-    box(-5.7f,PLINTH+.72f,-7.0f,.70f,.05f,1.3f,Material{{.74f,.62f,.44f},.25f,INTERIOR});
-    box(-5.7f,PLINTH+.35f,-7.0f,.62f,.70f,1.2f,Material{{.68f,.56f,.40f},.2f,INTERIOR});
-    accentCluster(-7.0f,PLINTH,-5.0f); accentCluster(-17.0f,PLINTH,-5.0f);
+    box(-5.4f,PLINTH+.72f,-8.6f,.70f,.05f,1.3f,Material{{.74f,.62f,.44f},.25f,INTERIOR});
+    box(-5.4f,PLINTH+.35f,-8.6f,.62f,.70f,1.2f,Material{{.68f,.56f,.40f},.2f,INTERIOR});
+    accentCluster(-9.4f,PLINTH,-5.0f); accentCluster(-17.0f,PLINTH,-5.0f);
 }
 
 // ---------------------------------------------------------------------------
@@ -193,52 +209,67 @@ void gamesHall() {
 // the corridor behind the curved wall, below a ceiling of diagonal ribs.
 // ---------------------------------------------------------------------------
 void shopHall() {
-    const float x0=8.6f,x1=SHOP_RIGHT_X,zf=-7.0f,zb=-3.6f,cy=F1-.28f;
+    // Images 6.14.06 PM (1) and (2): the shop is on the right of the entrance
+    // hall, its long front parallel to the way in, with the timber entrance
+    // at its right-hand end. It occupies the bays east of the hall.
+    const float fx=3.5f,x1=7.4f,z0=-16.4f,z1=-7.4f,cy=F1-.32f;
     const Material signRed{{.82f,.07f,.06f},.0f,EMISSIVE},signWhite{{1,1,.97f},.0f,EMISSIVE};
-    block(5.5f,0,zf,x0,7.8f,-3.2f,concrete);
-    block(STAIR_RIGHT_X+.2f,0,zf,21.25f,7.8f,-3.2f,concrete);
-    block(x0,cy,zf,x1,7.8f,-3.2f,concrete);
-    block(x0,cy-.02f,zf,x1,cy,zb,plaster);
-    block(x0,0,zb,x1,cy,-3.2f,concrete);
-    block(x0,0,zf,x1,PLINTH,zb,walkway);
-    block(x0,2.95f,zf-.24f,x1,3.55f,zf,signRed);
-    { Place sign(trs({x1,0,zf-.245f},180));
-      flatText(latinGlyphs("SHWAPNO"),1.75f,3.08f,0,.07f,.07f,.02f,signWhite);
-      flatText(bengaliGlyphs({3},31.0f),4.6f,3.06f,0,.08f,.08f,.02f,signWhite); }
-    thaiGlassPanel(9.35f,1.70f,zf-.06f,1.2f,2.4f);
-    thaiGlassPanel(12.03f,1.70f,zf-.06f,1.15f,2.4f);
-    thaiGlassPanel(13.65f,1.70f,zf-.06f,1.3f,2.4f);
-    // Shelving on the back wall and a centre gondola, stocked with packets.
+    const Material aluminium{{.55f,.60f,.60f},.7f,INTERIOR};
+    // The mass behind the curved wall is solid again, apart from the side corridor.
+    block(5.5f,0,-7.0f,SHOP_RIGHT_X,7.8f,-3.2f,concrete);
+    block(STAIR_RIGHT_X+.2f,0,-7.0f,21.25f,7.8f,-3.2f,concrete);
+    block(x1,PLINTH,-11.3f,x1+.2f,cy,-7.0f,plaster);          // back wall toward the hall behind the curve
+    block(fx-.1f,3.55f,z0,fx+.1f,cy,-11.3f,plaster);
+    // Red fascia: star panel at the far end, Latin name, Bengali name near the entrance.
+    block(fx-.25f,2.95f,z0-.1f,fx,3.55f,z1+.1f,signRed);
+    { Place sign(trs({fx-.255f,0,z0},-90));
+      block(.05f,3.0f,0,.55f,3.5f,.015f,Material{{.05f,.05f,.07f},.3f});
+      flatText(latinGlyphs("SHWAPNO"),2.6f,3.08f,0,.07f,.07f,.02f,signWhite);
+      flatText(bengaliGlyphs({3},31.0f),6.5f,3.06f,0,.08f,.08f,.02f,signWhite); }
+    for(float z : {z0-.1f,-13.4f,-10.3f,-8.7f,z1+.1f}) block(fx-.12f,PLINTH,z-.1f,fx+.1f,2.95f,z+.1f,plaster);
+    // Glazed bays in aluminium frames; the doorway is the open bay.
+    auto glazedBay=[&](float za,float zb) {
+        const float x=fx-.02f,y0=PLINTH+.05f,y1=2.9f;
+        for(float y : {y0,y1}) block(x-.035f,y-.03f,za,x+.035f,y+.03f,zb,aluminium);
+        for(float z : {za,zb}) block(x-.035f,y0,z-.03f,x+.035f,y1,z+.03f,aluminium);
+        roomGlass.push_back({{x,(y0+y1)/2,(za+zb)/2},zb-za-.06f,y1-y0-.06f,0,true});
+    };
+    glazedBay(z0+.1f,-13.5f); glazedBay(-13.3f,-10.4f); glazedBay(-8.6f,z1-.1f);
+    // Shelving along the back wall and a centre gondola, stocked with packets.
     const Color packets[5]={{.80f,.14f,.10f},{.92f,.74f,.14f},{.16f,.50f,.26f},{.16f,.34f,.70f},{.92f,.90f,.84f}};
     const Material shelf{{.86f,.86f,.82f},.3f,INTERIOR};
     for(int level=0;level<5;++level) {
         float y=PLINTH+.25f+level*.48f;
-        block(x0+.2f,y,zb-.38f,x1-.2f,y+.03f,zb,shelf);
-        for(int k=0;k<static_cast<int>((x1-x0-.5f)/.31f);++k) {
-            float x=x0+.3f+k*.31f,h=.20f+.16f*hash1(level*9.1f+k);
-            block(x,y+.03f,zb-.30f,x+.24f,y+.03f+h,zb-.06f,
+        block(x1-.38f,y,z0+.2f,x1,y+.03f,z1,shelf);
+        for(int k=0;k<static_cast<int>((z1-z0-.4f)/.31f);++k) {
+            float z=z0+.3f+k*.31f,h=.20f+.16f*hash1(level*9.1f+k);
+            block(x1-.30f,y+.03f,z,x1-.06f,y+.03f+h,z+.24f,
                   Material{packets[static_cast<int>(hash1(level*3.3f+k*1.7f)*5)%5],.25f,INTERIOR});
         }
     }
-    block(9.3f,PLINTH,-5.55f,13.1f,PLINTH+1.35f,-4.95f,shelf);
+    block(5.2f,PLINTH,-15.4f,5.8f,PLINTH+1.35f,-11.6f,shelf);
     for(int level=0;level<3;++level) for(int k=0;k<12;++k) {
-        float x=9.35f+k*.31f,y=PLINTH+.15f+level*.42f;
-        for(float z : {-5.62f,-4.95f})
-            block(x,y,z,x+.24f,y+.30f,z+.07f,Material{packets[(k+level*2)%5],.25f,INTERIOR});
+        float z=-15.35f+k*.31f,y=PLINTH+.15f+level*.42f;
+        for(float x : {5.13f,5.8f})
+            block(x,y,z,x+.07f,y+.30f,z+.24f,Material{packets[(k+level*2)%5],.25f,INTERIOR});
     }
-    // "Big sale" stand just inside the glazing.
-    block(11.9f,PLINTH,-6.80f,14.2f,PLINTH+.85f,-6.35f,Material{{.78f,.10f,.08f},.2f,INTERIOR});
+    // "Big sale" stand behind the middle bay, and the bill counter beside the door.
+    block(3.9f,PLINTH,-13.1f,4.35f,PLINTH+.85f,-10.7f,Material{{.78f,.10f,.08f},.2f,INTERIOR});
     for(int k=0;k<2;++k)
-        block(12.05f+k*1.08f,PLINTH+.25f,-6.82f,12.95f+k*1.08f,PLINTH+.62f,-6.80f,Material{{.96f,.84f,.16f},.2f,INTERIOR});
+        block(3.88f,PLINTH+.25f,-12.95f+k*1.15f,3.9f,PLINTH+.62f,-12.0f+k*1.15f,Material{{.96f,.84f,.16f},.2f,INTERIOR});
     for(int k=0;k<6;++k)
-        block(12.0f+k*.36f,PLINTH+.85f,-6.72f,12.26f+k*.36f,PLINTH+1.12f,-6.45f,Material{packets[k%5],.25f,INTERIOR});
-    tube(10.4f,cy,-5.3f,1.2f,true,7.0f,1.2f); tube(12.9f,cy,-5.9f,1.2f,true,7.0f,1.2f);
-    // Diagonal ribs crossing each corridor bay between the transverse beams.
+        block(3.95f,PLINTH+.85f,-13.0f+k*.38f,4.3f,PLINTH+1.12f,-12.74f+k*.38f,Material{packets[k%5],.25f,INTERIOR});
+    block(5.7f,PLINTH,-8.4f,7.0f,PLINTH+1.0f,-7.8f,Material{{.20f,.20f,.22f},.4f,INTERIOR});
+    tube(5.4f,cy,-14.2f,1.2f,false,7.0f,1.2f); tube(5.4f,cy,-9.6f,1.2f,false,7.0f,1.2f);
+    // Diagonal ribs over the entrance hall in front of the shop, and over
+    // each bay of the hall behind the curved wall.
+    for(float yaw : {-49.0f,49.0f}) { Place rib(trs({1.2f,0,-8.65f},yaw)); box(0,cy-.11f,0,6.6f,.22f,.13f,trim); }
+    const float ribY=F1-.28f;
     for(float x=4.0f;x<21.0f;x+=4.4f) for(float yaw : {-44.3f,44.3f}) {
         Place rib(trs({x+2.2f,0,-9.15f},yaw));
-        box(0,cy-.11f,0,6.0f,.22f,.13f,trim);
+        box(0,ribY-.11f,0,6.0f,.22f,.13f,trim);
     }
-    accentCluster(13.6f,PLINTH,-9.6f);
+    accentCluster(13.6f,PLINTH,-9.6f); accentCluster(.6f,PLINTH,-13.0f,true);
 }
 
 // ---------------------------------------------------------------------------
@@ -248,9 +279,9 @@ void shopHall() {
 // against the white curved wall, and a return flight to the first floor.
 // ---------------------------------------------------------------------------
 void ovalStairHall() {
-    const float x0=STAIR_LEFT_X,x1=STAIR_RIGHT_X,zHall=-7.0f,zStair=-3.0f,cy=F1-.28f,roof=7.8f;
-    const float rise=STOREY_TALL/20,run=.28f,mid=PLINTH+STOREY_TALL/2,zLanding=zStair+10*run,zFlat=1.25f;
-    const Vec3 c{SWC_CURVE_CENTER_X,0,-4.5f}; const float rin=SWC_CURVE_RADIUS-.44f;
+    const float x0=STAIR_LEFT_X,x1=STAIR_RIGHT_X,zHall=-7.0f,zStair=-2.0f,cy=F1-.28f,roof=7.8f;
+    const float rise=STOREY_TALL/20,run=.28f;
+    const Vec3 c{SWC_CURVE_CENTER_X,0,SWC_CURVE_CENTER_Z}; const float rin=SWC_CURVE_RADIUS-.44f;
     auto curveZ=[&](float x) { return c.z+std::sqrt(rin*rin-(x-c.x)*(x-c.x)); };
     // Flat slab from a straight edge out to the curved wall.
     auto toCurve=[&](float y,float zFrom,const Material& m,float up) {
@@ -267,15 +298,26 @@ void ovalStairHall() {
     block(x1,0,zHall,x1+.2f,roof,-3.2f,plaster);
     // The stair hall is the double-height space between the building and the
     // curved wall, closed by a partition at each end.
-    const float hallLeft=10.2f,hallRight=20.4f;
+    const float hallLeft=8.6f,hallRight=20.4f;
     const float a0=std::asin((hallLeft-c.x)/rin),a1=std::asin((hallRight-c.x)/rin); const int segments=32;
     auto arc=[&](int i,float y) { float t=a0+(a1-a0)*i/segments; return Vec3{c.x+rin*std::sin(t),y,c.z+rin*std::cos(t)}; };
-    block(hallLeft-.2f,0,-3.2f,hallLeft,8.0f,curveZ(hallLeft),plaster);
+    // The end wall beside the portico is an open path: the stair hall is
+    // entered straight from the entrance lobby.
+    { const float wa=-2.85f,wb=curveZ(hallLeft)-.35f,head=PLINTH+2.8f;
+      block(hallLeft-.2f,0,-3.2f,hallLeft,8.0f,wa,plaster);
+      block(hallLeft-.2f,0,wb,hallLeft,8.0f,curveZ(hallLeft),plaster);
+      block(hallLeft-.2f,head,wa,hallLeft,8.0f,wb,plaster);
+      block(8.3f,0,wa,hallLeft,PLINTH,wb,walkway); }
     block(hallRight,0,-3.2f,hallRight+.2f,8.0f,curveZ(hallRight),plaster);
     addTriangle({(x0+x1)/2,PLINTH,-3.2f},{hallLeft,PLINTH,-3.2f},arc(0,PLINTH),{0,1,0},walkway);
     addTriangle({(x0+x1)/2,PLINTH,-3.2f},arc(segments,PLINTH),{hallRight,PLINTH,-3.2f},{0,1,0},walkway);
     for(int i=0;i<segments;++i)
         addTriangle({(x0+x1)/2,PLINTH,-3.2f},arc(i,PLINTH),arc(i+1,PLINTH),{0,1,0},walkway);
+    // Flat roof over the whole hall, level with the curved wall's own roof.
+    addTriangle({(x0+x1)/2,7.96f,-3.2f},{hallLeft,7.96f,-3.2f},arc(0,7.96f),{0,1,0},trim);
+    addTriangle({(x0+x1)/2,7.96f,-3.2f},arc(segments,7.96f),{hallRight,7.96f,-3.2f},{0,1,0},trim);
+    for(int i=0;i<segments;++i)
+        addTriangle({(x0+x1)/2,7.96f,-3.2f},arc(i,7.96f),arc(i+1,7.96f),{0,1,0},trim);
     block(x0,cy,zHall,x1,F1,zStair,concrete);
     block(x0,cy-.02f,zHall,x1,cy,zStair,plaster);
     block(x0,F1,zHall,x1,F1+.012f,zStair,walkway);
@@ -292,31 +334,37 @@ void ovalStairHall() {
     glow((x0+x1)/2,cy-.38f,-5.0f,7.0f,1.0f);
     accentTile(15.7f,PLINTH,-5.4f,greyTile); accentTile(16.9f,PLINTH,-5.4f,greyTile);
 
-    // First flight (left), landing against the curve, return flight (right).
-    for(int i=0;i<10;++i) {
-        float y=PLINTH+(i+1)*rise,z=zStair+i*run;
-        block(x0+.10f,y-rise-.20f,z,x0+1.50f,y,z+run,trim);
-        float yr=mid+(i+1)*rise,zr=zLanding-i*run;
-        block(x1-1.50f,yr-rise-.20f,zr-run,x1-.10f,yr,zr,trim);
+    // stair-behind-oval.png: one flight sweeps round the inside of the curved
+    // wall, between the wall and a solid white balustrade that rises with it.
+    // It starts beside the open path and arrives on a first-floor bridge
+    // that crosses the hall to the walkway above the side corridor.
+    const float rIn=rin-1.5f,rOut=rin-.04f,rMid=(rIn+rOut)/2;
+    const float tTop=std::asin((x0-c.x)/rMid),tSpan=20*run/rMid,tBottom=tTop-tSpan;
+    auto polar=[&](float t,float r,float y) { return Vec3{c.x+r*std::sin(t),y,c.z+r*std::cos(t)}; };
+    // Solid sector between two angles and two radii.
+    auto wedge=[&](float ta,float tb,float ra,float rb,float yb,float yt,const Material& m) {
+        Vec3 a=polar(ta,ra,yb),b=polar(ta,rb,yb),e=polar(tb,rb,yb),d=polar(tb,ra,yb),up{0,yt-yb,0};
+        addQuad(a+up,b+up,e+up,d+up,{0,1,0},m); addQuad(a,d,e,b,{0,-1,0},m);
+        addQuad(a,b,b+up,a+up,m); addQuad(d,d+up,e+up,e,m); addQuad(a,a+up,d+up,d,m); addQuad(b,e,e+up,b+up,m);
+    };
+    for(int i=0;i<20;++i) {
+        float ta=tBottom+tSpan*i/20,tb=tBottom+tSpan*(i+1)/20,y=PLINTH+(i+1)*rise,under=std::max(PLINTH,y-rise-.22f);
+        wedge(ta,tb,rIn,rOut,under,y,trim);
+        wedge(ta,tb,rIn-.12f,rIn,under,y+.95f,plaster);
+        if(i%3==0) rod(polar(ta,rIn+.10f,y),polar(ta,rIn+.10f,y+.95f),.022f,steel,6);
+        for(float h : {.50f,.72f,.95f})
+            rod(polar(ta,rIn+.10f,y+h-rise),polar(tb,rIn+.10f,y+h),.018f,steel,6);
     }
-    block(x0,mid-.22f,zLanding,x1,mid,zFlat,trim);
-    toCurve(mid,zFlat,trim,1); toCurve(mid-.22f,zFlat,trim,-1);
-    // Stainless balustrades: three rails on posts on both sides of each
-    // flight, along the landing edges, and across the first-floor edge above
-    // the lower flight.
-    const float xa=x0+1.56f,xb=x1-1.56f;
+    // First-floor bridge from the head of the flight to the walkway.
+    const float zJoin=polar(tTop,rIn,0).z-.1f;
+    block(x0,F1-.22f,zStair,x1,F1,2.0f,trim);
+    toCurve(F1,2.0f,trim,1); toCurve(F1-.22f,2.0f,trim,-1);
     for(float h : {.38f,.64f,.90f}) {
-        for(float x : {x0+.05f,xa}) rod({x,PLINTH+rise+h,zStair},{x,mid+h,zLanding},.020f,steel,6);
-        for(float x : {xb,x1-.05f}) rod({x,mid+rise+h,zLanding},{x,F1+h,zStair},.020f,steel,6);
-        rod({x0+.05f,F1+h,zStair-.06f},{xb,F1+h,zStair-.06f},.020f,steel,6);
-        for(float x : {x0+.05f,x1-.05f}) rod({x,mid+h,zLanding},{x,mid+h,curveZ(x)},.020f,steel,6);
+        rod({x1-.05f,F1+h,zStair},{x1-.05f,F1+h,curveZ(x1-.05f)},.020f,steel,6);
+        rod({x0+.05f,F1+h,zStair},{x0+.05f,F1+h,zJoin},.020f,steel,6);
     }
-    for(int i=0;i<=10;i+=2) {
-        for(float x : {x0+.05f,xa}) rod({x,PLINTH+i*rise,zStair+i*run},{x,PLINTH+i*rise+rise+.92f,zStair+i*run},.024f,steel,6);
-        for(float x : {xb,x1-.05f}) rod({x,mid+i*rise,zLanding-i*run},{x,mid+i*rise+rise+.92f,zLanding-i*run},.024f,steel,6);
-    }
-    for(float x : {x0+.05f,x1-.05f}) rod({x,mid,curveZ(x)-.9f},{x,mid+.92f,curveZ(x)-.9f},.024f,steel,6);
-    for(float x=x0+.05f;x<xb+.01f;x+=(xb-x0-.05f)/2) rod({x,F1,zStair-.06f},{x,F1+.92f,zStair-.06f},.024f,steel,6);
+    for(float z=zStair;z<curveZ(x1-.05f);z+=1.2f) rod({x1-.05f,F1,z},{x1-.05f,F1+.92f,z},.024f,steel,6);
+    for(float z=zStair;z<zJoin+.01f;z+=(zJoin-zStair)/3) rod({x0+.05f,F1,z},{x0+.05f,F1+.92f,z},.024f,steel,6);
 
     // White plaster lining on the inside of the curved brick wall, with the
     // tall mullioned landing window.
@@ -343,37 +391,61 @@ void ovalStairHall() {
 // broad tiled room; dark tables fill it and ceiling fans hang between the beams.
 // ---------------------------------------------------------------------------
 void cafeteriaHall() {
-    const float x0=3.55f,x1=20.0f,z0=CAFE_WORLD_Z-13.0f,z1=CAFE_WORLD_Z,cy=F1-.32f;
-    const float westA=-40.5f,westB=-37.7f;
-    block(x0,0,z0,x1,PLINTH,z1,walkway);
-    block(x0,cy,z0,x1,11.7f,z1,concrete);
-    block(x0,cy-.02f,z0,x1,cy,z1,plaster);                // white ceiling
+    // L-shaped hall: the bays behind the CAFETERIA sign plus the bays running
+    // back along the courtyard corridor as far as the glazed rooms.
+    const float x0=3.55f,x1=20.0f,xe=18.95f,z0=CAFE_WORLD_Z-13.0f,zm=CAFE_WORLD_Z,z1=rooms::back,cy=F1-.32f;
+    const float westA=-40.5f,westB=-37.7f,stairZ=-41.1f,wallEnd=-26.2f;
+    block(x0,0,z0,x1,PLINTH,zm,walkway);    block(x0,0,zm,xe,PLINTH,z1,walkway);
+    block(x0,cy,z0,x1,11.7f,zm,concrete);   block(x0,cy,zm,xe,11.7f,z1,concrete);
+    block(x0,cy-.02f,z0,x1,cy,zm,plaster);  block(x0,cy-.02f,zm,xe,cy,z1,plaster);
     block(x0,PLINTH,z0,x1,cy,z0+.3f,plaster);
-    block(x0,PLINTH,z1-.3f,x1,cy,z1,plaster);
-    // West wall with the opening from the courtyard corridor (gallery bay 0).
-    block(x0,PLINTH,z0,x0+.35f,cy,westA,plaster);
-    block(x0,PLINTH,westB,x0+.35f,cy,z1,plaster);
-    block(x0,PLINTH+2.6f,westA,x0+.35f,cy,westB,plaster);
-    block(2.8f,0,-41.1f,x0,PLINTH,-36.13f,walkway);
-    block(2.8f,PLINTH,-41.1f,x0,F1,westA,concrete);
-    block(2.8f,PLINTH,westB,x0,F1,-36.13f,concrete);
-    block(2.8f,PLINTH+2.6f,westA,x0,F1,westB,concrete);
+    block(x0,PLINTH,z1-.3f,xe,cy,z1,plaster);
+    block(xe-.35f,PLINTH,zm,xe,cy,z1,plaster);
+    block(xe-.35f,PLINTH,zm-.3f,x1,cy,zm,plaster);
+    block(x0,PLINTH,z0,x0+.35f,cy,stairZ,plaster);          // solid beside the corridor-end stair
     // East wall either side of the recessed entrance built by cafeteria().
     block(x1-.4f,PLINTH,z0,x1,cy,CAFE_WORLD_Z-8.8f,plaster);
-    block(x1-.4f,PLINTH,CAFE_WORLD_Z-3.5f,x1,cy,z1,plaster);
+    block(x1-.4f,PLINTH,CAFE_WORLD_Z-3.5f,x1,cy,zm,plaster);
+
+    // 6.14.08 PM (1), 6.14.09 PM: the corridor wall is glazed, so the tables
+    // are seen from the corridor. Brick panel, barred window, transom, top light.
+    const float wx0=3.25f,wx1=3.55f;
+    block(2.8f,0,stairZ,x0,PLINTH,wallEnd,walkway);
+    block(2.8f,PLINTH+3.0f,stairZ,x0,F1,wallEnd,concrete);
+    block(wx0,PLINTH,stairZ,wx1,PLINTH+3.0f,westA,wallWhite);
+    block(wx0,PLINTH+2.6f,westA,wx1,PLINTH+3.0f,westB,wallWhite);
+    block(wx0,PLINTH,z1,wx1,PLINTH+3.0f,wallEnd,wallWhite);
+    const int modules=4; const float mw=(z1-westB)/modules;
+    for(int m=0;m<=modules;++m) {
+        float a=westB+m*mw,b=a+mw;
+        block(wx0-.05f,PLINTH,a-.15f,wx1,PLINTH+3.0f,a+.15f,wallWhite);
+        if(m==modules) break;
+        block(wx0,PLINTH,a+.15f,wx1,PLINTH+.85f,b-.15f,brickLight);
+        block(wx0-.05f,PLINTH+.85f,a+.15f,wx1+.03f,PLINTH+.93f,b-.15f,trim);
+        block(wx0,PLINTH+2.25f,a+.15f,wx1,PLINTH+2.45f,b-.15f,wallWhite);
+        block(wx0,PLINTH+.93f,(a+b)/2-.03f,wx1,PLINTH+3.0f,(a+b)/2+.03f,whitePaint);
+        roomGlass.push_back({{(wx0+wx1)/2,PLINTH+1.59f,(a+b)/2},mw-.3f,1.32f,0,true});
+        roomGlass.push_back({{(wx0+wx1)/2,PLINTH+2.725f,(a+b)/2},mw-.3f,.55f,0,true});
+        for(float y=PLINTH+1.08f;y<PLINTH+2.2f;y+=.165f) block(wx0+.02f,y,a+.15f,wx0+.035f,y+.012f,b-.15f,whitePaint);
+        for(int k=1;k<10;++k) { float z=a+.15f+(mw-.3f)*k/10; block(wx0+.02f,PLINTH+.93f,z-.006f,wx0+.035f,PLINTH+2.25f,z+.006f,whitePaint); }
+    }
+
+    const float rows[5]={-45.4f,-41.2f,-37.0f,-32.8f,-28.9f};
     for(float x : {9.5f,15.0f}) {
         block(x-.2f,cy-.35f,z0,x+.2f,cy,z1,plaster);
-        for(float z : {-45.4f,-41.2f}) box(x,(PLINTH+cy)/2,z,.5f,cy-PLINTH,.5f,plaster);
+        for(float z : rows) box(x,(PLINTH+cy)/2,z,.5f,cy-PLINTH,.5f,plaster);
     }
-    for(float z : {-45.4f,-41.2f}) block(x0,cy-.28f,z-.16f,x1,cy,z+.16f,plaster);
+    for(float z : rows) block(x0,cy-.28f,z-.16f,z>zm ? xe : x1,cy,z+.16f,plaster);
     for(int k=0;k<5;++k) { Place south(translation({4.6f+k*3.0f,0,z0+.3f})); interiorWindow(2.6f,PLINTH,3); }
-    for(int k=0;k<3;++k) { Place north(trs({11.2f+k*3.0f,0,z1-.3f},180)); interiorWindow(2.6f,PLINTH,3); }
     { Place east(trs({x1-.4f,0,z0+.6f},-90)); interiorWindow(3.0f,PLINTH,3); }
-    { Place east(trs({x1-.4f,0,z1-3.3f},-90)); interiorWindow(2.6f,PLINTH,3); }
+    { Place east(trs({x1-.4f,0,zm-3.3f},-90)); interiorWindow(2.6f,PLINTH,3); }
+    for(int k=0;k<3;++k) { Place east(trs({xe-.35f,0,zm+.7f+k*3.1f},-90)); interiorWindow(2.6f,PLINTH,3); }
+    { Place kitchen(trs({11.0f,0,z1-.3f},180)); timberDoor(0,PLINTH,1.7f); }
     // Tables keep the door axis and the corridor opening clear.
     for(float x : {9.9f,11.9f,13.4f,16.2f,18.0f}) diningSet(x,-48.0f);
     for(float x : {5.6f,7.6f,11.4f,13.2f,17.0f}) diningSet(x,-45.9f);
     for(float x : {8.0f,11.4f,13.2f,17.0f}) diningSet(x,-39.3f);
+    for(float z : {-35.0f,-30.8f}) for(float x : {5.6f,7.6f,11.4f,13.2f,17.0f}) diningSet(x,z);
     // Service counter with a menu band above it.
     const Material counter{{.72f,.60f,.44f},.3f,INTERIOR};
     block(4.2f,PLINTH,-49.3f,8.6f,PLINTH+1.0f,-48.6f,counter);
@@ -385,9 +457,11 @@ void cafeteriaHall() {
         if(z>-40.0f&&x<7.0f) continue;
         ceilingFan(x,cy,z);
     }
+    for(float x : {6.6f,12.2f,17.0f}) for(float z : {-34.9f,-30.7f}) ceilingFan(x,cy,z);
     for(float x : {6.6f,12.2f,17.6f}) for(float z : {-45.0f,-40.6f}) tube(x,cy,z,1.2f,true,8.5f,1.1f);
+    for(float x : {6.6f,12.2f,17.0f}) for(float z : {-36.3f,-29.6f}) tube(x,cy,z,1.2f,true,8.5f,1.1f);
     tube(12.2f,cy,-48.6f,1.2f,true,8.0f,.9f);
-    accentCluster(12.0f,PLINTH,-43.3f); accentCluster(5.6f,PLINTH,-39.4f,true);
+    accentCluster(12.0f,PLINTH,-43.3f); accentCluster(5.6f,PLINTH,-39.4f,true); accentCluster(11.6f,PLINTH,-33.0f);
 }
 
 // ---------------------------------------------------------------------------
@@ -395,6 +469,22 @@ void cafeteriaHall() {
 // gallery. Deep white portal frames span it; a brick-inset parapet with a
 // steel rail overlooks the lawn; red planters stand in two rows.
 // ---------------------------------------------------------------------------
+// Joins the three-storey block to the stage wing at the courtyard corner, on
+// both levels: a paved link at ground level and a bridge from the terrace to
+// the stage-wing gallery above it. The stage wing floor is 0.15 lower at the
+// upper level, which is one shallow step.
+void wingLink() {
+    const float xe=TERRACE_EDGE_X,xr=COURTYARD_RIGHT,zTerrace=-41.1f,zStageLower=-43.8f,zStageUpper=-43.95f;
+    block(xe,0,zStageLower,xr,PLINTH,zTerrace,walkway);
+    block(xe,PLINTH,zStageLower,xe+.14f,PLINTH+.004f,zTerrace,darkTile);
+    block(xe,F1-.32f,zStageUpper,xr,F1,zTerrace,concrete);
+    block(xe,F1,zStageUpper,xr,F1+.012f,zTerrace,Material{{.84f,.85f,.82f},.30f,TILE});
+    // Parapet on the courtyard side of the bridge, continuing the terrace parapet.
+    { Place edge(trs({xe,0,zStageUpper},-90)); balconyPanel(.10f,zTerrace-zStageUpper-.30f,F1); }
+    cylinder((xe+xr)/2,F1-.41f,(zTerrace+zStageLower)/2,.09f,.18f,.09f,lampBlack,12);
+    glow((xe+xr)/2,F1-.72f,(zTerrace+zStageLower)/2,7.0f,.9f);
+}
+
 void courtyardTerrace() {
     const float xe=TERRACE_EDGE_X,xi=COURTYARD_RIGHT-.30f,bay=29.8f/6,z0=-41.1f,z1=z0+5*bay;
     const float beamY=F1+2.95f,frameTop=F1+3.75f;
@@ -415,7 +505,8 @@ void courtyardTerrace() {
             cylinder(bay/2,F1-.41f,-1.6f,.09f,.18f,.09f,lampBlack,12);
         }
     }
-    { Place end(trs({xi,0,z0},180)); balconyPanel(0,xi-xe-.56f,F1); }
+    // The north end is open: wingLink() carries the terrace across to the stage wing.
+    wingLink();
     { Place end(translation({xe+.56f,0,z1})); balconyPanel(0,xi-xe-.56f,F1); }
     // Planter rows along both edges, a blue bench, and grey accent tiles.
     for(int k=0;k<10;++k) {
@@ -439,8 +530,28 @@ void courtyardTerrace() {
 // double doors with louvred heads, tandem waiting seats and a waste bin.
 // ---------------------------------------------------------------------------
 void upperHall() {
-    // The wall is open at x 14.6-17.8, where the stair from the curved wall arrives.
-    for(float x : {6.3f,10.6f}) { Place wall(trs({x,0,-7.0f},180)); timberDoor(0,F1+.015f,1.9f); }
+    // 6.14.13 PM (1): the open upper hall beside the entrance corridor. Its white
+    // west wall, the side of the front-left wing, carries two timber double
+    // doors with louvred heads and a room label; a mat lies before the first.
+    for(float z : {-9.6f,-7.55f}) { Place wall(trs({-1.1f,0,z},90)); timberDoor(0,F1,1.7f); }
+    block(-1.1f,F1+1.9f,-8.72f,-1.07f,F1+2.1f,-8.42f,Material{{.93f,.93f,.90f},.2f});
+    block(-1.0f,F1,-10.4f,.3f,F1+.012f,-8.8f,Material{{.62f,.42f,.28f},.15f});
+    // The door wall runs on past its old corner, so the hall is wider, and the
+    // two pillars that stood at that corner are left out at this level. Tandem
+    // seats and the green waste bin stand against the wall.
+    block(-1.3f,F1,-14.8f,-1.1f,PLINTH+2*STOREY_TALL-.32f,-10.55f,wallWhite);
+    for(int s=0;s<3;++s) {
+        float z=-13.9f+s*.56f;
+        box(-.72f,F1+.46f,z,.46f,.07f,.50f,seatBlue);
+        box(-.93f,F1+.72f,z,.06f,.46f,.50f,seatBlue);
+    }
+    box(-.72f,F1+.38f,-13.34f,.08f,.08f,1.7f,steel);
+    for(float z : {-14.0f,-12.7f}) box(-.72f,F1+.19f,z,.42f,.38f,.05f,steel);
+    box(-.72f,F1+.52f,-11.4f,.55f,1.0f,.55f,Material{{.12f,.36f,.32f},.3f,INTERIOR});
+    // Beyond the wall the hall is open to the courtyard behind a railed parapet.
+    { Place edge(trs({COURTYARD_RIGHT-.30f,0,-16.0f},-90)); balconyPanel(0,1.15f,F1); }
+    accentCluster(1.4f,F1,-12.6f);
+    // Farther along, the hall above the shops opens onto the bridge from the curved stair.
     for(int s=0;s<3;++s) {
         float x=18.6f+s*.56f;
         box(x,F1+.46f,-7.62f,.50f,.07f,.46f,seatBlue);
@@ -461,7 +572,14 @@ void corridorDetails() {
     accentCluster(.6f,PLINTH,-27.0f,true); accentCluster(.6f,PLINTH,-34.4f,true);
     accentCluster(9.0f,PLINTH,-19.2f); accentCluster(19.2f,PLINTH,-19.2f);
     accentCluster(.6f,F1,-24.0f,true); accentCluster(.6f,F1,-33.0f,true);
-    accentCluster(5.0f,PLINTH,-14.2f); accentCluster(5.0f,F1,-14.2f);
+    accentCluster(5.0f,F1,-14.2f);
+    // corridor-with-door.png: roller shutter on the shop's flank, in the corridor
+    // that runs from the far end of the shop to the right-hand entrance.
+    const Material slat{{.62f,.63f,.60f},.35f};
+    block(4.2f,PLINTH,-17.25f,7.0f,3.25f,-17.2f,slat);
+    for(float y=PLINTH+.04f;y<3.2f;y+=.11f) block(4.2f,y,-17.28f,7.0f,y+.05f,-17.25f,slat);
+    for(float x : {4.14f,7.0f}) block(x,PLINTH,-17.30f,x+.06f,3.3f,-17.2f,metalDark);
+    block(4.14f,3.25f,-17.34f,7.06f,3.5f,-17.2f,metal);
 }
 
 // Ceiling fixtures of the covered spaces, as point lights for the shader and
@@ -479,7 +597,7 @@ void interiorLighting() {
     for(float x : {6.0f,11.2f,16.3f,21.5f,25.6f}) glow(x,c0,-18.7f);
     for(float x : {6.0f,10.5f,15.0f,19.5f}) { glow(x,c0,-9.1f); glow(x,c1+.3f,-9.1f); }
     for(float z : {-13.5f,-17.5f}) { glow(23.5f,c0,z,7.0f,.9f); glow(23.5f,c1+.3f,z,7.0f,.9f); }
-    for(float y : {c0,c1,c2}) glow(5.2f,y,-13.4f,7.0f,.9f);
+    for(float y : {c0,c1,c2}) { glow(5.2f,y,-13.4f,7.0f,.9f); glow(1.6f,y,-43.4f,7.0f,.9f); }
     for(float x : {-17.0f,-12.2f,-7.4f,-2.8f}) { glow(x,c0,-12.9f,7.0f,.9f); glow(x,c1,-12.9f,7.0f,.9f); }
     // Stage-wing galleries and the shop arcade.
     for(int b=0;b<7;b+=2) glow(STAGE_WING_LEFT+(b+.5f)*STAGE_BAY,PLINTH+STOREY-.7f,-45.9f,7.5f,.8f);

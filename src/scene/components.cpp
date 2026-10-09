@@ -138,7 +138,8 @@ void galleryWing(const Gallery& s,float seed) {
         float f=PLINTH+l*s.storey;
         block(-.3f,f-.32f,-s.depth,length+.3f,f,.30f,concrete);
         Place p(translation({0,0,.30f}));
-        for(int b=0;b<s.bays;++b) balconyPanel(b*s.bay+.3f,(b+1)*s.bay-.3f,f);
+        for(int b=0;b<s.bays;++b)
+            if(!(l==1&&(s.terrace>>b&1u))) balconyPanel(b*s.bay+.3f,(b+1)*s.bay-.3f,f);
     }
     for(int l=0;l<s.levels;++l) {
         float ceiling=l==s.levels-1 ? top : PLINTH+(l+1)*s.storey-.32f;
@@ -149,7 +150,12 @@ void galleryWing(const Gallery& s,float seed) {
             block(cx-.6f,ceiling-.05f,-s.depth+.35f,cx+.6f,ceiling,-s.depth+.43f,lampWhite);
         }
     }
-    for(int b=0;b<=s.bays;++b) block(b*s.bay-.28f,PLINTH,-.28f,b*s.bay+.28f,top,.28f,concrete);
+    for(int b=0;b<=s.bays;++b) {
+        if(s.hallColumns>>b&1u) {   // column interrupted through the first floor
+            block(b*s.bay-.28f,PLINTH,-.28f,b*s.bay+.28f,PLINTH+s.storey,.28f,concrete);
+            if(s.levels>2) block(b*s.bay-.28f,PLINTH+2*s.storey-.32f,-.28f,b*s.bay+.28f,top,.28f,concrete);
+        } else block(b*s.bay-.28f,PLINTH,-.28f,b*s.bay+.28f,top,.28f,concrete);
+    }
     block(-.4f,top,-s.depth-1.0f,length+.4f,top+SLAB,1.0f,trim);
     for(int b=0;b<s.bays;++b)
         if(s.frames>>b&1u) openFrame(b*s.bay+.15f,(b+1)*s.bay-.15f,s.frameBase,top+.9f,1.7f);

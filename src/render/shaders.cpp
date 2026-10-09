@@ -43,13 +43,19 @@ const char* sceneFragmentSource=R"(
     uniform vec3 cameraPosition;
     uniform vec3 sunDirection;
     uniform sampler2D shadowMap;
-        uniform int shadowsEnabled;
-        uniform int highlightRolloff;
+    uniform int shadowsEnabled;
+    uniform int highlightRolloff;
+    // Nearest ceiling fixtures: position, colour and (radius,0,0).
+    const int MAX_LIGHTS=24;
+    uniform int lightCount;
+    uniform vec3 lightPositions[MAX_LIGHTS];
+    uniform vec3 lightColors[MAX_LIGHTS];
+    uniform vec3 lightRanges[MAX_LIGHTS];
     out vec4 pixel;
 
     const vec3 sunColor=vec3(1.0,0.96,0.88);
     const vec3 skyColor=vec3(0.62,0.74,0.90);
-    const vec3 groundBounce=vec3(0.36,0.40,0.30);
+    const vec3 groundBounce=vec3(0.50,0.50,0.44);
     const vec3 fogColor=vec3(0.74,0.84,0.94);
 
     float hash(vec2 p){
@@ -70,6 +76,30 @@ const char* sceneFragmentSource=R"(
         vec3 unit=base*(1.0-variation*0.5+variation*hash(floor(cell)));
         float detail=1.0-smoothstep(0.35,0.8,max(fwidth(cell.x),fwidth(cell.y)));
         return mix(mix(base,joint,0.12),mix(unit,joint,mortar),detail);
+    }
+    // Square floor tiles on a straight grid (no running-bond offset).
+    vec3 gridded(vec3 base,vec2 uv,float size,vec3 joint,float jointWidth){
+        vec2 cell=uv/size,f=fract(cell)*size;
+        float mortar=max(step(f.x,jointWidth),step(f.y,jointWidth));
+        float detail=1.0-smoothstep(0.35,0.8,max(fwidth(cell.x),fwidth(cell.y)));
+        return mix(mix(base,joint,0.04),mix(base,joint,mortar),detail);
+    }
+    // Point lights with constant/linear/quadratic attenuation and a smooth
+    // cut-off radius. Each fixture lights only the storey it hangs in.
+    void pointLights(vec3 n,vec3 viewDirection,float shininess,out vec3 diffuse,out vec3 specular){
+        diffuse=vec3(0.0); specular=vec3(0.0);
+        for(int i=0;i<lightCount;++i){
+            vec3 toLight=lightPositions[i]-worldPosition;
+            float d=length(toLight),r=lightRanges[i].x;
+            if(d>r||toLight.y<-0.45||toLight.y>4.3) continue;
+            vec3 l=toLight/d;
+            float window=1.0-pow(d/r,4.0);
+            // Fade out one storey below the fixture instead of cutting off sharply.
+            float storey=1.0-smoothstep(3.3,4.3,toLight.y);
+            float attenuation=storey*window*window/(1.0+0.22*d+0.20*d*d);
+            diffuse+=lightColors[i]*attenuation*(0.25+0.75*max(dot(n,l),0.0));
+            specular+=lightColors[i]*attenuation*pow(max(dot(viewDirection,reflect(-l,n)),0.0),shininess);
+        }
     }
     float shadowFactor(vec3 n){
         if(shadowsEnabled==0) return 1.0;
@@ -102,7 +132,7 @@ const char* sceneFragmentSource=R"(
             base*=.94+.12*patches;
             base*=1.0+detail*(blades-.5)*.65;
         }
-        else if(pattern==6) base=bonded(base,worldPosition.xz,vec2(0.6,0.6),base*0.86,0.012,0.08);
+        else if(pattern==6) base=gridded(base,worldPosition.xz,0.6,base*0.70,0.010);
 
         // Phong illumination: ambient + diffuse + specular.
         float shadow=shadowFactor(n);
@@ -111,8 +141,12 @@ const char* sceneFragmentSource=R"(
         vec3 reflection=reflect(-sunDirection,n);
         float shininess=mix(8.0,96.0,gloss);
         float specular=pow(max(dot(viewDirection,reflection),0.0),shininess)*gloss*shadow;
-        vec3 color=base*(ambient+sunColor*diffuse*0.95)+sunColor*specular*0.6;
-        if(pattern==8) color=base*(vec3(.76,.75,.70)+sunColor*diffuse*.2);
+        if(pattern==8) ambient=vec3(0.44,0.44,0.42);          // indoor surfaces: neutral bounce light
+        vec3 lampDiffuse,lampSpecular;
+        pointLights(n,viewDirection,shininess,lampDiffuse,lampSpecular);
+        vec3 color=base*(ambient+sunColor*diffuse*0.95+lampDiffuse)
+                  +sunColor*specular*0.6+lampSpecular*gloss*0.5;
+        if(pattern==10) color=base;                           // emissive: lamps, daylight glazing, lit signs
         if(pattern==2||pattern==7){
             vec3 r=reflect(-viewDirection,n);
             vec3 env=mix(groundBounce*0.6,skyColor*1.1,clamp(r.y*0.5+0.55,0.0,1.0));
@@ -177,6 +211,15 @@ const char* skyFragmentSource=R"(
         vec3 cloud=mix(vec3(.65,.74,.79),vec3(.98,.98,.95),smoothstep(.46,.70,clouds(uv+vec2(.08,.03))));
         pixel=vec4(mix(color,cloud,mask),1);
     }
+)";
+
+// Full-screen quad that shows a finished ray-traced frame (rows stored top-down).
+const char* imageFragmentSource=R"(
+    #version 330 core
+    in vec2 screen;
+    uniform sampler2D image;
+    out vec4 pixel;
+    void main(){ pixel=vec4(texture(image,vec2(screen.x*0.5+0.5,0.5-screen.y*0.5)).rgb,1.0); }
 )";
 
 GLuint compileShader(GLenum type,const char* source) {

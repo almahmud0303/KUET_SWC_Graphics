@@ -4,6 +4,7 @@
 #include "input/camera.h"
 #include "scene/layout.h"
 #include "scene/scene.h"
+#include "scene/people.h"
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -29,7 +30,7 @@ std::vector<Vertex> vertices;
 std::vector<Triangle> triangles;
 std::vector<Node> nodes;
 std::vector<PointLight> lights;
-Mat4 cachedModel{}; bool cachedBaseObjects=false,cacheValid=false;
+Mat4 cachedModel{}; bool cachedBaseObjects=false,cacheValid=false; float cachedFan=0,cachedTraffic=0;
 
 const Vec3 sunColor{1.0f,.96f,.88f},skyColor{.62f,.74f,.90f},groundBounce{.50f,.50f,.44f},fogColor{.74f,.84f,.94f};
 
@@ -134,7 +135,8 @@ void subdivide(std::vector<Primitive>& prims,int nodeIndex,int depth) {
 }
 
 void gather(const RayCamera& camera) {
-    if(cacheValid&&cachedBaseObjects==camera.baseObjects&&std::memcmp(cachedModel.m,camera.model.m,sizeof(cachedModel.m))==0) return;
+    if(cacheValid&&cachedBaseObjects==camera.baseObjects&&cachedFan==fanAngle&&cachedTraffic==trafficTime
+       &&std::memcmp(cachedModel.m,camera.model.m,sizeof(cachedModel.m))==0) return;
     vertices.clear(); triangles.clear(); nodes.clear(); lights.clear();
     const Mat3 normals=normalMatrix(camera.model);
     auto add=[&](std::size_t first,std::size_t count,const Mat4& transform,const Mat3& normal) {
@@ -151,6 +153,11 @@ void gather(const RayCamera& camera) {
             Mat4 fan=multiply(camera.model,multiply(translation(hub),rotationY(fanAngle)));
             add(fanFirst,fanCount,fan,normalMatrix(fan));
         }
+        std::vector<MovingInstance> movers; collectMovers(trafficTime,movers);   // frozen at the current moment
+        for(const MovingInstance& mover:movers) {
+            Mat4 place=multiply(camera.model,mover.transform);
+            add(mover.first,mover.count,place,normalMatrix(place));
+        }
         for(const auto& pane:roomGlass) add(pane.first,6,camera.model,normals);
         for(PointLight light:sceneLights) { light.position=transformPoint(camera.model,light.position); lights.push_back(light); }
     }
@@ -164,7 +171,7 @@ void gather(const RayCamera& camera) {
     if(!prims.empty()) subdivide(prims,0,0);
     triangles.reserve(prims.size());
     for(const auto& p:prims) triangles.push_back(p.triangle);
-    cachedModel=camera.model; cachedBaseObjects=camera.baseObjects; cacheValid=true;
+    cachedModel=camera.model; cachedBaseObjects=camera.baseObjects; cachedFan=fanAngle; cachedTraffic=trafficTime; cacheValid=true;
 }
 
 // Slab test: entry distance of the ray into a box, or a large value on a miss.
@@ -271,9 +278,9 @@ Vec3 trace(Vec3 origin,Vec3 direction,int depth,float travelled,const TraceSetti
     Vec3 lampDiffuse{0,0,0},lampSpecular{0,0,0};
     for(const PointLight& light:lights) {
         Vec3 toLight=light.position-position; float d=length(toLight);
-        if(d>light.radius||toLight.y<-.45f||toLight.y>4.1f) continue;
+        if(d>light.radius||toLight.y<-.45f||toLight.y>4.3f) continue;
         Vec3 l=toLight*(1.0f/d); float window=1-std::pow(d/light.radius,4.0f);
-        float attenuation=window*window/(1+.22f*d+.20f*d*d),cosine=std::max(dot(n,l),0.0f);
+        float attenuation=(1-smoothstep(3.3f,4.3f,toLight.y))*window*window/(1+.22f*d+.20f*d*d),cosine=std::max(dot(n,l),0.0f);
         float visible=cosine>0&&!intersect(start,l,1e-4f,d-.05f,ignored,true) ? 1.0f : 0.0f;
         Vec3 colour{light.color.r,light.color.g,light.color.b};
         lampDiffuse=lampDiffuse+colour*(attenuation*(.25f+.75f*cosine*visible));

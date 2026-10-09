@@ -4,7 +4,8 @@ namespace swc { namespace app {
 
 void frontWing();
 void entranceCorridor();
-void connectedStairwell();
+void corridorLinkHall();
+void northStairwell();
 void curvedBrickFacade();
 
 }} // namespace swc::app

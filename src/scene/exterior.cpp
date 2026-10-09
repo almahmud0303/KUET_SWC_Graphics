@@ -216,8 +216,9 @@ void cafeteria() {
     // Recessed entrance under the signed canopy.
     block(3.5f,0,-2.5f,8.8f,PLINTH,.45f,walkway);
     stair(6.15f,1.35f,5.6f,3,.15f,.30f,0,trim);
-    block(3.5f,PLINTH,-2.9f,8.8f,f1,-2.5f,concrete);
-    block(5.3f,PLINTH,-2.52f,6.9f,PLINTH+2.8f,-2.45f,darkGap);
+    // Entrance wall with a real doorway into the dining hall.
+    block(3.5f,PLINTH,-2.9f,5.3f,f1,-2.5f,concrete); block(6.9f,PLINTH,-2.9f,8.8f,f1,-2.5f,concrete);
+    block(5.3f,PLINTH+2.8f,-2.9f,6.9f,f1,-2.5f,concrete);
     block(5.2f,PLINTH,-2.5f,5.3f,PLINTH+2.9f,-2.4f,wood); block(6.9f,PLINTH,-2.5f,7.0f,PLINTH+2.9f,-2.4f,wood);
     { Place p(translation({0,0,-2.15f})); windowBay(4.25f,PLINTH,1.2f,510.0f,false); windowBay(7.95f,PLINTH,1.2f,511.0f,false); }
     block(8.8f,0,-2.9f,9.1f,f1,0,concrete);
@@ -335,7 +336,7 @@ void exteriorElevations() {
     { Place p(trs({TALL_EXTERIOR_X,0,-24.0f},90));
       windowedWing({2,4.0f,3,STOREY_TALL,3,1.0f,false,false,false,true},134.0f); }
     { Place p(trs({TALL_EXTERIOR_X,0,-32.0f},90));
-      galleryWing({2,4.0f,3,STOREY_TALL,2.8f,0,0,0,false,PLINTH+STOREY_TALL-.32f},146.0f); }
+      galleryWing({2,4.0f,3,STOREY_TALL,2.8f,0,0,0,false,PLINTH+STOREY_TALL-.32f,0,0},146.0f); }
     { Place p(trs({TALL_EXTERIOR_X,0,CAFETERIA_FRONT_Z},90)); cafeteria(); cafeteriaRightBlock(); }
     { Place p(trs({TALL_EXTERIOR_X,0,CAFETERIA_REAR_Z},90));
       windowedWing({1,56.0f+CAFETERIA_REAR_Z,3,STOREY_TALL,1,1.0f,false,false,false,true},111.0f); }

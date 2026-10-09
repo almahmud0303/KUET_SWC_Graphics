@@ -8,6 +8,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Keep editor include paths and compiler flags aligned with the actual build.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# The CPU ray tracer needs an optimised build; default to Release.
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
 include(FetchContent)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -28,6 +33,7 @@ add_executable(image_project
     src/input/camera.cpp
     src/main.cpp
     src/navigation/navigation.cpp
+    src/render/raytracer.cpp
     src/render/renderer.cpp
     src/render/screenshot.cpp
     src/render/shaders.cpp
@@ -36,12 +42,15 @@ add_executable(image_project
     src/scene/courtyard.cpp
     src/scene/exterior.cpp
     src/scene/front.cpp
+    src/scene/interior.cpp
     src/scene/landscape.cpp
     src/scene/lettering.cpp
     src/scene/materials.cpp
+    src/scene/people.cpp
     src/scene/rooms.cpp
     src/scene/scene.cpp
     src/scene/site.cpp
+    src/scene/street.cpp
     src/gl_loader.c
 )
 target_include_directories(image_project PRIVATE include src)

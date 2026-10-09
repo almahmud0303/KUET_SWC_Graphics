@@ -17,7 +17,8 @@ void frontWing() {
     stair(-9.6f,3.2f,35.8f,3,.15f,.33f,0,trim);
     // Front-left windowed wing behind double-height free columns (photos 23, 24, 27).
     { Place p(trs({-27,0,-2.6f},0));
-      windowedWing({5,4.8f,2,STOREY,3,4.5f,true,true,false,false},11.0f); }
+      // Four window bays; the fifth is the blank white bay of entranceLobby().
+      windowedWing({4,4.8f,2,STOREY,3,4.5f,true,true,false,false},11.0f); }
     // Entrance canopy continues to the curved brick volume.
     const float roofUnder=PLINTH+2*STOREY;
     block(-2.65f,roofUnder,-10.55f,8.3f,roofUnder+SLAB,1.9f,trim);
@@ -25,16 +26,15 @@ void frontWing() {
     for(float x : {.2f,3.4f,6.6f}) box(x,(PLINTH+roofUnder)/2,1.0f,.56f,roofUnder-PLINTH,.56f,trim);
     for(float x : {.2f,3.4f}) box(x,(PLINTH+roofUnder)/2,-3.0f,.50f,roofUnder-PLINTH,.50f,trim);
     for(float x=-1.5f;x<8.0f;x+=2.4f) for(float z : {-2.0f,.6f}) cylinder(x,roofUnder-.07f,z,.08f,.14f,.08f,lampBlack,10);
-    // Tall warm-brick wall left of the doors.
-    block(-3.0f,PLINTH,-4.8f,-1.1f,roofUnder,-4.3f,warmPanel);
+    // The terracotta relief wall left of the doors is built by entranceLobby().
     // Recessed timber entrance: open centre leads through to the rear corridor.
     const float dz=-6.0f;
     const float landing=PLINTH+STOREY_TALL;
-    block(-1.1f,PLINTH+3.3f,dz-.3f,3.5f,landing,dz+.1f,concrete);
-    for(int leaf=0;leaf<4;++leaf) {
+    block(.05f,PLINTH+3.3f,dz-.3f,3.5f,landing,dz+.1f,concrete);
+    for(int leaf=1;leaf<4;++leaf) {   // the terracotta wall takes the place of the first leaf
         float x0=-1.1f+leaf*1.15f,x1=x0+1.15f;
         if(leaf!=2) block(x0,PLINTH,dz-.2f,x0+.06f,PLINTH+3.3f,dz+.05f,trim);
-        if(leaf==0||leaf==3) {
+        if(leaf==3) {
             block(x0+.06f,PLINTH,dz-.2f,x1-.03f,PLINTH+2.6f,dz-.05f,wood);
             for(float gx : {.3f,.57f,.84f}) block(x0+gx,PLINTH+.1f,dz-.05f,x0+gx+.03f,PLINTH+2.5f,dz-.03f,woodGroove);
         }
@@ -43,8 +43,9 @@ void frontWing() {
     }
     block(-1.1f,0,-11.3f,3.5f,PLINTH,-4.6f,walkway);
     // Upper floor above the doors: the rear balcony edge seen through the portico.
-    block(-1.1f,landing-.32f,-9.0f,3.5f,landing,dz+.1f,concrete);
-    { Place p(translation({0,0,dz+.1f})); balconyPanel(-1.1f,3.5f,landing); }
+    block(-1.1f,landing-.32f,-9.0f,3.5f,landing,dz-.3f,concrete);
+    block(.05f,landing-.32f,dz-.3f,3.5f,landing,dz+.1f,concrete);
+    { Place p(translation({0,0,dz+.1f})); balconyPanel(.05f,3.5f,landing); }
     block(3.5f,PLINTH,-6.3f,5.5f,PLINTH+3.95f,-5.8f,warmPanel);
     // Balcony return between the entrance and the curved wall (photos 26, 30).
     block(5.5f,PLINTH+3.55f,-3.2f,8.3f,PLINTH+3.95f,-.3f,concrete);
@@ -52,11 +53,11 @@ void frontWing() {
     { Place p(translation({0,0,-3.2f}));
       windowBay(6.9f,PLINTH,1.6f,301.0f); windowBay(6.9f,PLINTH+STOREY,1.6f,302.0f); }
     // Building masses behind the facades (roofs are the tops of these blocks).
-    block(-26.25f,0,-10.55f,-3.0f,7.8f,-3.35f,concrete);
-    block(-3.0f,0,-10.55f,-1.1f,7.8f,-4.8f,concrete);
+    // The front-left wing is hollow at ground level: see gamesHall().
+    block(-4.3f,0,-10.55f,-1.1f,7.8f,-6.3f,concrete);
     // Leave the strip behind these rooms hollow for the connecting corridor.
     block(3.5f,0,-7.0f,5.5f,7.8f,-6.3f,concrete);
-    block(5.5f,0,-7.0f,21.25f,7.8f,-3.2f,concrete);
+    // The mass behind the curved wall holds the shop and the stair hall: see shopHall().
 }
 
 // Straight passage from the entrance door into the relocated three-storey
@@ -89,33 +90,60 @@ void entranceCorridor() {
     }
 }
 
-// Two return flights per storey, with open stairwells and corridor-level landings.
-void connectedStairwell() {
+// The bay where the stair used to stand. Its ground floor is part of the
+// Shwapno shop (shopHall); its first floor joins the gallery to the upper hall.
+void corridorLinkHall() {
     const float top=PLINTH+3*STOREY_TALL;
     block(20.5f,0,-20.0f,25.5f,PLINTH,-14.2f,walkway);
     block(25.1f,PLINTH,-20.0f,25.5f,top,-14.2f,concrete);
     block(20.5f,PLINTH,-20.0f,25.5f,top,-19.75f,concrete);
     block(20.5f,top,-20.0f,25.5f,top+SLAB,-14.2f,trim);
+    for(int level=1;level<3;++level) {
+        float f=PLINTH+level*STOREY_TALL;
+        block(20.5f,f-.32f,-19.75f,25.1f,f,-14.2f,concrete);
+        cylinder(22.8f,f-.41f,-17.0f,.09f,.18f,.09f,lampBlack,12);
+        // Only the top floor needs a guard: the lower two continue into the shop hall.
+        if(level==2) { Place edge(translation({0,0,-14.2f})); balconyPanel(20.8f,25.1f,f); }
+    }
+    cylinder(22.8f,top-.09f,-17.0f,.09f,.18f,.09f,lampBlack,12);
+}
+
+// 3.07.57 AM, 6.14.10 PM (1): the dog-leg stair at the far end of the
+// courtyard corridor. Two flights per storey serve all three floors; a tall
+// window lights the half landings. Coordinates are in the tall block's frame.
+void northStairwell() {
+    const float top=PLINTH+3*STOREY_TALL,x0=17.3f,x1=21.25f,front=-44.3f,start=-46.0f,turn=-48.8f,back=-49.85f;
+    const float rise=STOREY_TALL/20,run=.28f;
+    block(x0,0,back-.25f,x1,PLINTH,front,walkway);
+    block(x0,PLINTH,back-.25f,x0+.25f,top,front,concrete);
+    block(x0,PLINTH,back-.25f,x1,top,back,concrete);
+    block(x0,top,back-.25f,x1,top+SLAB,front,trim);
     for(int level=0;level<3;++level) {
         float f=PLINTH+level*STOREY_TALL;
-        if(level>0) block(20.5f,f-.22f,-15.9f,25.1f,f,-14.2f,concrete);
-        { Place edge(translation({0,0,-14.2f})); balconyPanel(20.8f,25.1f,f); }
+        if(level>0) block(x0+.25f,f-.22f,start,x1,f,front,concrete);
         if(level==2) continue;
-        const float rise=STOREY_TALL/20,run=.29f;
-        block(21.1f,f+STOREY_TALL/2-.22f,-19.75f,24.7f,f+STOREY_TALL/2,-18.8f,concrete);
+        block(x0+.25f,f+STOREY_TALL/2-.22f,back,x1,f+STOREY_TALL/2,turn,concrete);
         for(int i=0;i<10;++i) {
-            float y=f+(i+1)*rise,z=-15.9f-i*run;
-            block(21.1f,y-rise,z-run,22.65f,y,z,trim);
-            float yr=f+STOREY_TALL/2+(i+1)*rise,zr=-18.8f+i*run;
-            block(23.05f,yr-rise,zr,24.6f,yr,zr+run,trim);
+            float y=f+(i+1)*rise,z=start-i*run;
+            block(17.6f,y-rise-.20f,z-run,19.15f,y,z,trim);
+            float yr=f+STOREY_TALL/2+(i+1)*rise,zr=turn+i*run;
+            block(19.55f,yr-rise-.20f,zr,21.1f,yr,zr+run,trim);
             if(i%2==0) {
-                rod({22.65f,y,z-run/2},{22.65f,y+.9f,z-run/2},.022f,metal,6);
-                rod({23.05f,yr,zr+run/2},{23.05f,yr+.9f,zr+run/2},.022f,metal,6);
+                rod({19.2f,y,z-run/2},{19.2f,y+.9f,z-run/2},.022f,metal,6);
+                rod({19.5f,yr,zr+run/2},{19.5f,yr+.9f,zr+run/2},.022f,metal,6);
             }
         }
-        rod({22.65f,f+rise+.9f,-15.9f},{22.65f,f+STOREY_TALL/2+.9f,-18.8f},.028f,metal,8);
-        rod({23.05f,f+STOREY_TALL/2+rise+.9f,-18.8f},{23.05f,f+STOREY_TALL+.9f,-15.9f},.028f,metal,8);
+        for(float h : {.45f,.9f}) {
+            rod({19.2f,f+rise+h,start},{19.2f,f+STOREY_TALL/2+h,turn},.024f,metal,8);
+            rod({19.5f,f+STOREY_TALL/2+rise+h,turn},{19.5f,f+STOREY_TALL+h,start},.024f,metal,8);
+        }
     }
+    // Tall landing window with white mullions on the rear wall.
+    const Material light{{.84f,.92f,.88f},.0f,EMISSIVE};
+    block(18.1f,2.5f,back,20.5f,10.6f,back+.025f,light);
+    for(float x : {18.1f,18.9f,19.7f,20.5f}) block(x-.03f,2.5f,back,x+.03f,10.6f,back+.06f,whitePaint);
+    for(float y=2.5f;y<10.65f;y+=1.16f) block(18.1f,y-.03f,back,20.5f,y+.03f,back+.06f,whitePaint);
+    for(float y : {top-.09f,PLINTH+2*STOREY_TALL-.31f,PLINTH+STOREY_TALL-.31f}) cylinder(19.3f,y,-45.1f,.09f,.18f,.09f,lampBlack,12);
 }
 
 // ---------------------------------------------------------------------------
@@ -123,7 +151,9 @@ void connectedStairwell() {
 // pale bands, louver strips with fins and bilingual lettering.
 // ---------------------------------------------------------------------------
 void curvedBrickFacade() {
-    const Vec3 c{SWC_CURVE_CENTER_X,0,-4.5f};
+    // Lighter, redder brick than the rest of the building, as photographed.
+    const Material ovalBrick{{.60f,.26f,.17f},.05f,BRICK};
+    const Vec3 c{SWC_CURVE_CENTER_X,0,SWC_CURVE_CENTER_Z};
     const float R=SWC_CURVE_RADIUS,thick=.40f,thetaL=radians(-68.0f),thetaR=radians(95.0f),flare=radians(12.0f);
     const float hL=9.4f,hR=8.5f; const int N=60,M=14;
     auto theta=[&](float u,float y) { float start=thetaL-flare*(y/hL); return start+(thetaR-start)*u; };
@@ -140,7 +170,7 @@ void curvedBrickFacade() {
             emit(at(t00,ya0,r),radial(t00)*sign,m); emit(at(t11,yb1,r),radial(t11)*sign,m); emit(at(t01,ya1,r),radial(t01)*sign,m);
         }
     };
-    surface(R,1,brick,0,99); surface(R-thick,-1,brick,0,99);
+    surface(R,1,ovalBrick,0,99); surface(R-thick,-1,ovalBrick,0,99);
     surface(R+.035f,1,brickDark,0,.55f);
     for(int i=0;i<N;++i) {
         float u0=static_cast<float>(i)/N,u1=static_cast<float>(i+1)/N,y0=topAt(u0),y1=topAt(u1);
@@ -149,9 +179,9 @@ void curvedBrickFacade() {
     }
     for(int j=0;j<M;++j) {
         float y0=hL*j/M,y1=hL*(j+1)/M,a=theta(0,y0),b=theta(0,y1);
-        addQuad(at(a,y0,R-thick),at(a,y0,R),at(b,y1,R),at(b,y1,R-thick),{-std::cos(a),0,std::sin(a)},brick);
+        addQuad(at(a,y0,R-thick),at(a,y0,R),at(b,y1,R),at(b,y1,R-thick),{-std::cos(a),0,std::sin(a)},ovalBrick);
         float r0=hR*j/M,r1=hR*(j+1)/M;
-        addQuad(at(thetaR,r0,R),at(thetaR,r0,R-thick),at(thetaR,r1,R-thick),at(thetaR,r1,R),{std::cos(thetaR),0,-std::sin(thetaR)},brick);
+        addQuad(at(thetaR,r0,R),at(thetaR,r0,R-thick),at(thetaR,r1,R-thick),at(thetaR,r1,R),{std::cos(thetaR),0,-std::sin(thetaR)},ovalBrick);
     }
     // Pale horizontal bands wrapping the curve.
     for(float yb : {1.0f,3.0f,4.9f,6.9f,8.25f}) for(int i=0;i<N;++i) {

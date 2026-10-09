@@ -7,6 +7,11 @@ namespace swc { namespace app {
 std::vector<Vertex> mesh;
 std::vector<Frame> frames;
 std::vector<GlassPane> roomGlass;
+std::vector<PointLight> sceneLights;
+std::vector<Vec3> fanPositions;
+std::vector<VehicleMesh> vehicleMeshes;
+std::vector<Vehicle> vehicles;
+float trafficTime=28.2f;   // captures use this fixed moment
 GLsizei opaqueCount=0,fanCount=0;
 GLint fanFirst=0,baseObjectsFirst=0;
 GLsizei baseObjectsCount=0;

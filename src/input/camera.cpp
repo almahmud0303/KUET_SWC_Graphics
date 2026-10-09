@@ -39,6 +39,24 @@ const CameraPreset presets[]={
     {"Room interior and ceiling fan", {11.2f,2.05f,-21.2f},{11.2f,2.7f,-25.0f},78},
     {"Room glass entrance from inside", {12.8f,2.05f,-24.5f},{10.8f,2.15f,-19.5f},78},
     {"Canonical base objects", {9,14,-5},{0,.3f,-20},48},
+    // Interior views matched to the photographs (Shift+1 ... Shift+9, Shift+0, Shift+H).
+    {"Entrance lobby (6.14.05 PM)",             {2.9f,1.8f,-.9f},{-5.0f,2.6f,-4.6f},80},
+    {"Indoor games hall (6.14.06 PM)",          {-4.9f,2.0f,-4.85f},{-20.0f,1.7f,-7.2f},78},
+    {"Shwapno shopfront (6.14.06 PM (2))",      {-.25f,1.9f,-13.7f},{3.5f,2.0f,-12.3f},92},
+    {"Cafeteria dining hall (6.14.08 PM (2))",  {4.5f,2.1f,-38.2f},{16.0f,1.3f,-46.5f},80},
+    {"Two-bay ground corridor (6.14.11 PM (1))",{-2.7f,2.0f,-40.2f},{.4f,1.8f,-18.0f},76},
+    {"First-floor terrace (6.14.11 PM (2))",    {-1.3f,5.75f,-40.4f},{-2.7f,4.9f,-20.0f},80},
+    {"First-floor hall (6.14.13 PM (1))",       {3.2f,5.7f,-6.9f},{-1.6f,5.0f,-10.4f},86},
+    {"Side corridor to the stair (corridor-with-stair.png)",{15.5f,1.9f,-10.7f},{16.1f,2.0f,-1.0f},72},
+    {"Stair behind the curved wall (stair-behind-oval.png)",{15.0f,5.75f,.2f},{11.2f,1.5f,1.5f},92},
+    {"Corridor windows into the cafeteria (6.14.08 PM (1))",{-.1f,2.0f,-28.6f},{3.6f,1.8f,-34.6f},82},
+    {"Corridor-end stair (3.07.57 AM)",          {1.3f,2.0f,-27.0f},{1.4f,2.3f,-46.0f},70},
+    // road/ photographs: the street behind the SWC (Shift+V, Shift+B).
+    {"Stalls across the back road (road photos)", {4.0f,1.7f,-65.2f},{2.0f,2.2f,-80.0f},74},
+    {"Boundary wall and gate from the road (road photos)",{-14.0f,1.7f,-72.5f},{12.0f,1.6f,-63.5f},70},
+    {"Campus gate on the east road (gate photo)",   {44.0f,1.7f,-69.6f},{44.0f,1.9f,-63.5f},72},
+    {"Open path from the portico to the curved stair",{9.1f,1.8f,-2.2f},{12.4f,2.0f,1.8f},84},
+    {"Traffic on the back road",                    {-34.0f,7.0f,-62.0f},{2.0f,.6f,-71.0f},68},
 };
 const int presetCount=sizeof(presets)/sizeof(presets[0]);
 
@@ -47,7 +65,7 @@ float cameraYaw=0,cameraPitch=0,cameraDistance=30,cameraFov=55;
 float cameraOrthoRatio=0; // orthographic half-height per unit of distance, so zoom still works
 float modelRotation=0.0f,modelScale=1.0f;
 Vec3 modelTranslation{0.0f,0.0f,0.0f};
-bool rotating=false,panning=false,shadowsOn=true,walking=false;
+bool rotating=false,panning=false,shadowsOn=true,walking=false,rayTraceRequested=false;
 double lastMouseX=0.0,lastMouseY=0.0;
 int framebufferWidth=1280,framebufferHeight=800;
 
@@ -107,6 +125,9 @@ bool pressed(GLFWwindow* window,int key) {
 void input(GLFWwindow* window,float delta) {
     if(down(window,GLFW_KEY_ESCAPE)) glfwSetWindowShouldClose(window,GLFW_TRUE);
     if(pressed(window,GLFW_KEY_P)) fansRunning=!fansRunning;
+    if(pressed(window,GLFW_KEY_N)) applyPreset(down(window,GLFW_KEY_LEFT_SHIFT) ? 35 : 34);   // campus gate; Shift+N: path to the curved stair
+    if(pressed(window,GLFW_KEY_F10)) applyPreset(36);        // traffic on the back road
+    if(pressed(window,GLFW_KEY_Y)) rayTraceRequested=true;   // ray trace the current view
     if(pressed(window,GLFW_KEY_F6)) {
         if(walking) applyPreset(0);
         else {
@@ -171,12 +192,13 @@ void input(GLFWwindow* window,float delta) {
     if(down(window,GLFW_KEY_C)) { modelRotation=0; modelScale=1; modelTranslation={0,0,0}; }
     if(pressed(window,GLFW_KEY_R)) applyPreset(0);
     if(pressed(window,GLFW_KEY_F)) { applyPreset(0); modelRotation=0; modelScale=1; modelTranslation={0,0,0}; }
-    for(int i=0;i<9;++i) if(pressed(window,GLFW_KEY_1+i)) applyPreset(i);
-    if(pressed(window,GLFW_KEY_0)) applyPreset(9);
-    if(pressed(window,GLFW_KEY_V)) applyPreset(10);
-    if(pressed(window,GLFW_KEY_H)) applyPreset(11);
+    bool shift=down(window,GLFW_KEY_LEFT_SHIFT)||down(window,GLFW_KEY_RIGHT_SHIFT);
+    for(int i=0;i<9;++i) if(pressed(window,GLFW_KEY_1+i)) applyPreset(shift ? 21+i : i);
+    if(pressed(window,GLFW_KEY_0)) applyPreset(shift ? 30 : 9);
+    if(pressed(window,GLFW_KEY_V)) applyPreset(shift ? 32 : 10);
+    if(pressed(window,GLFW_KEY_H)) applyPreset(shift ? 31 : 11);
     for(int i=0;i<5;++i) if(pressed(window,GLFW_KEY_F1+i)) applyPreset(12+i);
-    if(pressed(window,GLFW_KEY_B)) shadowsOn=!shadowsOn;
+    if(pressed(window,GLFW_KEY_B)) { if(shift) applyPreset(33); else shadowsOn=!shadowsOn; }
 }
 
 }} // namespace swc::app

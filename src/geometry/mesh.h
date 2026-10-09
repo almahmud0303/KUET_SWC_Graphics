@@ -9,10 +9,23 @@ namespace swc { namespace app {
 
 struct Vertex { Vec3 position, normal; Color color; float gloss, pattern; };
 struct Frame { Mat4 model; Mat3 normal; };
-struct GlassPane { Vec3 center; float width,height; GLint first=0; };
+// Transparent pane in the XY plane, or in the YZ plane when alongZ is set.
+struct GlassPane { Vec3 center; float width,height; GLint first=0; bool alongZ=false; };
+// Local light source (ceiling fixture): position, colour/intensity and cut-off radius.
+struct PointLight { Vec3 position; Color color; float radius; };
 extern std::vector<Vertex> mesh;
 extern std::vector<Frame> frames;
 extern std::vector<GlassPane> roomGlass;
+extern std::vector<PointLight> sceneLights;
+// Hub positions of every ceiling fan; one rotor mesh is instanced at each.
+extern std::vector<Vec3> fanPositions;
+// Traffic on the back road. Each vehicle kind is one mesh range, built facing
+// +X with its wheels on y=0; a vehicle is that mesh under a time-based transform.
+struct VehicleMesh { GLint first; GLsizei count; };
+struct Vehicle { int kind; float laneZ,direction,speed,offset,loop; };
+extern std::vector<VehicleMesh> vehicleMeshes;
+extern std::vector<Vehicle> vehicles;
+extern float trafficTime;
 extern GLsizei opaqueCount,fanCount,baseObjectsCount;
 extern GLint fanFirst,baseObjectsFirst;
 extern bool showingBaseObjects,fansRunning;

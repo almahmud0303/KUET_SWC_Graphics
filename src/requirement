@@ -14,14 +14,29 @@ KUET SWC 3D Graphics Project Requirements
 
 Implementation status
 
+- 3D environment: the SWC exterior, courtyard and site from project/ and project_2/; the interior
+  halls, corridors, terrace and stairs from the project_3/ walkthrough and the stair images in the
+  project root (src/scene/interior.cpp); and the street behind the building, with its boundary wall,
+  road, divider and stalls, from road/ (src/scene/street.cpp).
 - 3D primitives: boxes, tapered and elliptical cylinders, rods, spheres, ellipsoids, quads, triangles, and annuli.
 - Canonical bases: reusable unit cube, cylinder, sphere, cone, frustum, tube, plane, triangle and ring in src/geometry/canonical_shapes.h; shared transforms in src/geometry/geometry_math.h.
 - Transformations: custom translation, X/Y rotation, uniform and non-uniform scaling, and matrix multiplication.
 - Composite transformations: T * R * S local transforms combined parent * child on a transform stack
-  (windows inside wings, wings inside the site), plus the interactive whole-model transform.
+  (windows inside wings, wings inside the site), the interactive whole-model transform, and one fan
+  rotor mesh instanced at 21 hubs with M * T * R.
 - Vector/matrix operations: custom Vec3/Mat4/Mat3 math including the inverse-transpose normal matrix.
-- Camera: orbit, pan, walk, and zoom with a custom look-at matrix; twelve viewpoints, including the covered connecting corridor.
-- Projection: custom perspective projection matrix (and orthographic projection for the sun's shadow map).
-- Interaction: mouse/keyboard camera controls, view presets, and model translation/rotation/scaling.
-- Lighting: ambient + diffuse + specular Phong calculation with per-material specular strength.
-- Shading: per-fragment Phong shading with interpolated normals, shadow mapping, and procedural brick/paving detail.
+- Camera: orbit, pan, walk, and zoom with a custom look-at matrix; 37 viewpoints, thirteen of them
+  placed where the interior, stair and street photographs were taken (Shift+1 ... Shift+9, Shift+0,
+  Shift+H, Shift+V, Shift+B).
+- Projection: custom perspective projection matrix (and orthographic projection for elevations and the sun's shadow map).
+- Animation: ceiling-fan rotors, road traffic (easybikes, cycle-vans, an occasional bus) and 35 pedestrians move with
+  elapsed time; each vehicle kind is one mesh drawn under M * T(x(t)) * R.
+- Interaction: mouse/keyboard camera controls, view presets, model translation/rotation/scaling,
+  collision-aware walking, shadow and fan toggles, and Y to ray trace the current view.
+- Lighting: ambient + diffuse + specular Phong calculation with per-material specular strength, from
+  one directional sun and about a hundred point lights (ceiling fixtures and stall lamps) with distance
+  attenuation; emissive glazing, battens and signs.
+- Shading: per-fragment Phong shading with interpolated normals, shadow mapping, and procedural brick/paving/tile detail.
+- Ray tracing (beyond the listed requirements): src/render/raytracer.cpp traces the same scene on the CPU
+  with a SAH bounding-volume hierarchy, Moller-Trumbore intersection, shadow rays, Fresnel reflections,
+  thin-glass transmission, ambient occlusion and jittered supersampling. Run with --raytrace or the Y key.

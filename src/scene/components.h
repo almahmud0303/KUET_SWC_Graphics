@@ -9,6 +9,8 @@ struct WindowWing {
 struct Gallery {
     int bays; float bay; int levels; float storey; float depth;
     unsigned frames; unsigned passages; unsigned voids; bool tileAccents; float frameBase;
+    unsigned terrace;   // bays whose first-floor edge opens onto a terrace
+    unsigned hallColumns; // column lines left out through the first floor, where a hall is wider
 };
 
 void windowBay(float x,float floorY,float w,float seed,bool transom=true);

@@ -15,7 +15,9 @@ constexpr float ENTRANCE_AXIS=1.2f;
 // the centre of the entrance opening. Keep all of its components in one frame.
 constexpr Vec3 TALL_BLOCK_OFFSET{ENTRANCE_AXIS-18.9f,0,3.2f};
 constexpr float COURTYARD_RIGHT=17.3f+TALL_BLOCK_OFFSET.x;
-constexpr float SWC_CURVE_CENTER_X=15.0f,SWC_CURVE_RADIUS=7.5f;
+// Outer edge of the two-bay ground corridor and the first-floor terrace above it.
+constexpr float TERRACE_EDGE_X=COURTYARD_RIGHT-3.6f;
+constexpr float SWC_CURVE_CENTER_X=15.0f,SWC_CURVE_CENTER_Z=-3.5f,SWC_CURVE_RADIUS=7.5f;
 // Extend only the room side: the courtyard corridor remains aligned with the door.
 constexpr float TALL_EXTERIOR_X=SWC_CURVE_CENTER_X+SWC_CURVE_RADIUS-TALL_BLOCK_OFFSET.x;
 constexpr float TALL_EXTRA_WIDTH=TALL_EXTERIOR_X-29.0f;
@@ -24,6 +26,9 @@ constexpr float CAFETERIA_FRONT_Z=-20.0f-CAFETERIA_SETBACK;
 constexpr float CAFETERIA_REAR_Z=CAFETERIA_FRONT_Z-13.0f;
 constexpr float CAFE_WORLD_Z=CAFETERIA_FRONT_Z+TALL_BLOCK_OFFSET.z;
 constexpr float ENTRY_FRONT_Z=-17.2f,ENTRY_BACK_Z=-20.25f;
+
+// One consistent sun for the shadow map, the shader and the ray tracer.
+inline Vec3 sunDirection() { return normalize({.42f,1.6f,.62f}); }
 
 constexpr float STAGE_WING_LEFT=-39.6f, STAGE_BAY=5.6f;
 constexpr float STAGE_CENTER=STAGE_WING_LEFT+2.1f*STAGE_BAY;

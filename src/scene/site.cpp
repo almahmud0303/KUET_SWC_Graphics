@@ -63,8 +63,8 @@ void site() {
     block(9.5f,0,3.2f,9.75f,.28f,15.0f,brick);
     // Campus roads (front E-W and east N-S), concrete with hedges and drains.
     addQuad({-80,.015f,33},{47,.015f,33},{47,.015f,27},{-80,.015f,27},{0,1,0},road);
-    addQuad({41,.016f,33},{47,.016f,33},{47,.016f,-95},{41,.016f,-95},{0,1,0},road);
-    for(float z=-94.0f;z<26.0f;z+=.35f) {
+    addQuad({41,.016f,33},{47,.016f,33},{47,.016f,-63.3f},{41,.016f,-63.3f},{0,1,0},road);   // ends at the campus gate
+    for(float z=-62.0f;z<26.0f;z+=.35f) {
         if(z>CAFE_WORLD_Z-15.0f&&z<CAFE_WORLD_Z+.6f) continue;
         if(z>-24.3f&&z<1.0f) continue;
         if(z>14.4f&&z<17.1f) continue;

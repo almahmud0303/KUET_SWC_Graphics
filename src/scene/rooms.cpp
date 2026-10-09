@@ -17,10 +17,13 @@ void thaiGlassPanel(float x,float y,float z,float width,float height) {
     }
     roomGlass.push_back({{x,y,z},width-.055f,height-.055f});
 }
-void ceilingFanMount(float x,float z) {
+void ceilingFanMount(float x,float z) { ceilingFan(x,rooms::ceiling,z); }
+// Fixed canopy and down-rod; the shared rotor mesh is instanced at the hub.
+void ceilingFan(float x,float ceilingY,float z) {
     const Material enamel{{.82f,.82f,.76f},.4f,INTERIOR};
-    cylinder(x,3.69f,z,.16f,.12f,.16f,enamel);
-    cylinder(x,3.42f,z,.035f,.5f,.035f,enamel);
+    cylinder(x,ceilingY-.08f,z,.16f,.12f,.16f,enamel);
+    cylinder(x,ceilingY-.35f,z,.035f,.5f,.035f,enamel);
+    fanPositions.push_back({x,ceilingY-.64f,z});
 }
 void room(float x,Color accent) {
     using namespace rooms;
@@ -43,7 +46,8 @@ void room(float x,Color accent) {
     box(x-.89f,1.6f,front+.005f,.035f,.32f,.07f,metal);
     box(x,2.96f,front,1.48f,.07f,.1f,metal);
     ceilingFanMount(x,-23.55f);
-    box(x,3.70f,-25.7f,1.15f,.045f,.40f,Material{{1,.98f,.87f},.1f,INTERIOR});
+    box(x,3.70f,-25.7f,1.15f,.045f,.40f,tubeLight);
+    sceneLights.push_back({{x,3.35f,-24.6f},{1.15f,1.12f,1.02f},7.5f});
     // Desk at the back leaves the doorway and central walking area clear.
     box(x,1.22f,back+1.25f,2.1f,.10f,.85f,furniture);
     for(float dx:{-.9f,.9f}) for(float dz:{-.32f,.32f})
@@ -69,8 +73,9 @@ void buildRoomDrawRanges() {
     for(auto& pane:roomGlass) {
         pane.first=static_cast<GLint>(mesh.size());
         Vec3 c=pane.center; float w=pane.width/2,h=pane.height/2;
-        addQuad({c.x-w,c.y-h,c.z},{c.x+w,c.y-h,c.z},
-                {c.x+w,c.y+h,c.z},{c.x-w,c.y+h,c.z},glass);
+        if(pane.alongZ) addQuad({c.x,c.y-h,c.z-w},{c.x,c.y-h,c.z+w},{c.x,c.y+h,c.z+w},{c.x,c.y+h,c.z-w},glass);
+        else addQuad({c.x-w,c.y-h,c.z},{c.x+w,c.y-h,c.z},
+                     {c.x+w,c.y+h,c.z},{c.x-w,c.y+h,c.z},glass);
     }
 }
 
