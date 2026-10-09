@@ -102,8 +102,38 @@ lights, 21 rotating fans, 7 moving vehicles and 35 walking pedestrians. The
 report explains each feature together with the equations behind it, shows
 the results, and states the limits of the work.
 
-\vspace{0.3em}
-\setcounter{tocdepth}{1}
+
+\textbf{Keywords:} OpenGL, Phong illumination, shadow mapping, procedural
+texturing, hierarchical modelling, instancing, collision detection, ray
+tracing, bounding-volume hierarchy.
+
+\section*{Features at a Glance}
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}L{4.2cm}X@{}}
+\toprule
+Feature & Technique \\
+\midrule
+Building, interior, site, street & Nine primitive shapes placed by composite transformations on a transform stack \\
+Curved wall and curved stair & Flat quads and ring sectors on a cylinder, with true radial normals \\
+Camera & Orbit camera and first-person walking camera, both through a custom look-at matrix \\
+Projection & Custom perspective matrix; orthographic matrix for plan, elevations and the shadow camera \\
+Sunlight & Per-fragment Phong model with ambient, diffuse and specular terms \\
+Indoor lighting & 113 point lights with distance attenuation; emissive lamps and signs \\
+Shadows & $4096\times4096$ shadow map with $3\times3$ percentage-closer filtering \\
+Surfaces & Procedural brick, paving, tile, lawn, bark and thatch computed in the shader; no image textures \\
+Glass & Alpha blending of depth-sorted panes with an angle-dependent reflection term \\
+Animation & 21 fans, 7 vehicles and 35 pedestrians, each an instanced mesh under a time-based transform \\
+Walking & Collision against the rendered triangles using a spatial grid, barycentric floor tests and wall sliding \\
+Ray tracing & CPU tracer with a surface-area-heuristic hierarchy, shadow rays, Fresnel reflection, ambient occlusion and supersampling \\
+Views and output & 37 preset views; any view can be saved as an image by either renderer \\
+Verification & Three automatic tests, including walking routes through every hall and both stairs \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\newpage
+\setcounter{tocdepth}{2}
 \tableofcontents
 \newpage
 
@@ -146,6 +176,41 @@ keyboard and mouse.
 Features beyond the requirements are shadow mapping, procedural materials
 and sky, transparent glass, animation of fans, traffic and people, collision
 detection, and ray tracing.
+
+
+\subsection{Reference material and method}
+The building was documented in four sets of photographs
+(Table~\ref{tab:photos}). Each photograph was described in a written
+reference file that records what is visible and, more importantly, how the
+parts relate: which wall faces which way, what lies behind a door, where a
+corridor leads. The model was then built from that description, rendered
+from the position of each photograph, and compared with it. Where the two
+disagreed the description and the model were corrected together. Several
+relationships were revised in this way, for example the position of the
+stair inside the curved wall and the side of the lobby that carries the
+indoor-games door.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lrl@{}}
+\toprule
+Set & Photographs & Subject \\
+\midrule
+\code{project/} & 30 & Exterior, entrance and courtyard \\
+\code{project\_2/} & 14 & Right-hand shop wing and cafeteria corner \\
+\code{project\_3/} & 24 & Interior walk-through of the ground and first floors \\
+\code{road/} & 25 & The street behind the building, its wall, stalls and gate \\
+\midrule
+Total & 93 & \\
+\bottomrule
+\end{tabular}
+\caption{Reference photographs used to build the model.}\label{tab:photos}
+\end{table}
+
+All dimensions are estimates read from the photographs with one unit taken
+as about one metre; no measurements were made on site. The coordinate
+system has $+Y$ upward, $+X$ to the right when facing the main entrance,
+and $+Z$ pointing from the building toward the front plaza.
 
 % ---------------------------------------------------------------- 2
 \section{System Overview}
@@ -333,6 +398,30 @@ corridors with black accent tiles, two stairs, and a first-floor terrace
 under white portal frames. Behind the building: a boundary wall with two
 gates, a road with a central divider, and a row of stalls.
 
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}L{3.6cm}X@{}}
+\toprule
+Space & What is modelled, and from what \\
+\midrule
+Plaza & Pavers with a procedural pattern; the \emph{alpona} from concentric rings and petal quads \\
+Front wing and portico & Double-height columns (boxes), repeated window bays with security bars, a canopy slab, timber doors with louvres \\
+Curved wall & $60\times14$ quads on a cylinder with a flared edge; bands, louvre fins and block lettering placed along the arc \\
+Courtyard and stage & Lawn, a two-storey stage wing with balcony panels and fins, a brick backdrop, a curved platform from ring sectors \\
+Entrance lobby & Terracotta relief wall of raised tiles, a tournament board, the indoor-games door in the side wall \\
+Indoor-games hall & Window bays on both long walls, table-tennis tables, stacked chairs, four fans \\
+Shwapno shop & Red fascia with lettering, glass bays, shelves and gondola stocked with several hundred packet boxes \\
+Cafeteria hall & L-shaped hall with a column grid, 24 table sets, a counter, 14 fans; glass wall toward the corridor \\
+Stair hall & Double-height hall inside the curved wall; 20 sector steps with a solid balustrade and a bridge \\
+Terrace and upper hall & Portal frames, brick-inset parapets with rails, planters, timber double doors, seats \\
+Street & Boundary wall of piers and brick panels, two gates, road with a central divider, stalls, town buildings \\
+Landscape & Broadleaf trees and palms from tapered cylinders and ellipsoids; hedges, shrubs, a thatched gazebo \\
+\bottomrule
+\end{tabularx}
+\caption{The main spaces of the model and how each is constructed.}
+\end{table}
+
 \begin{figure}[H]
 \centering
 \begin{subfigure}[b]{0.325\textwidth}\includegraphics[width=\textwidth]{interior-lobby.png}\caption{Entrance lobby}\end{subfigure}\hfill
@@ -342,6 +431,18 @@ gates, a road with a central divider, and a row of stalls.
 \begin{subfigure}[b]{0.325\textwidth}\includegraphics[width=\textwidth]{courtyard-stage.png}\caption{Courtyard and stage}\end{subfigure}\hfill
 \begin{subfigure}[b]{0.325\textwidth}\includegraphics[width=\textwidth]{street-gate.png}\caption{Campus gate}\end{subfigure}
 \caption{Some of the modelled spaces, rendered in real time.}
+\end{figure}
+
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.325\textwidth}\includegraphics[width=\textwidth]{interior-games-hall.png}\caption{Indoor-games hall}\end{subfigure}\hfill
+\begin{subfigure}[b]{0.325\textwidth}\includegraphics[width=\textwidth]{interior-ground-corridor.png}\caption{Ground corridor}\end{subfigure}\hfill
+\begin{subfigure}[b]{0.325\textwidth}\includegraphics[width=\textwidth]{interior-upper-hall.png}\caption{First-floor hall}\end{subfigure}\\[4pt]
+\begin{subfigure}[b]{0.325\textwidth}\includegraphics[width=\textwidth]{interior-cafeteria-windows.png}\caption{Glass wall of the cafeteria}\end{subfigure}\hfill
+\begin{subfigure}[b]{0.325\textwidth}\includegraphics[width=\textwidth]{interior-corridor-stair.png}\caption{Corridor-end stair}\end{subfigure}\hfill
+\begin{subfigure}[b]{0.325\textwidth}\includegraphics[width=\textwidth]{interior-stair-entry.png}\caption{Entry to the stair hall}\end{subfigure}
+\caption{Further interior spaces. All of them can be reached on foot in walking mode.}
 \end{figure}
 
 % ---------------------------------------------------------------- 4
@@ -396,6 +497,21 @@ shadow camera.
 \begin{subfigure}[b]{0.56\textwidth}\includegraphics[width=\textwidth]{street-traffic.png}\caption{Perspective view of the street}\end{subfigure}
 \caption{The two projections. In (a) size is independent of distance; in (b) it is not.}
 \end{figure}
+
+
+\subsection{Walking camera and preset views}
+The walking camera is the same camera with $d=1$: the eye, not the target,
+is the point that moves, and the collision system of
+Section~\ref{sec:walk} decides where it may go. Arrow keys or a mouse drag
+change $\psi$ and $\phi$ while the eye stays in place.
+
+Thirty-seven views are stored as an eye position, a target and a field of
+view. Twelve reproduce exterior photographs, five are orthographic
+elevations and the plan, eleven are placed where interior photographs were
+taken, and the rest show the street, the gate, the traffic and the gallery
+of basic shapes. Interior photographs were taken with a wide lens, so those
+views use a vertical field of view of $75^\circ$ to $90^\circ$; exterior
+views use $55^\circ$ to $65^\circ$.
 
 % ---------------------------------------------------------------- 5
 \section{Illumination and Shading}\label{sec:light}
@@ -477,6 +593,34 @@ smaller than a pixel it is faded to its average colour, which removes
 shimmering. The sky blends from horizon to zenith and adds clouds from five
 octaves of noise; distant surfaces are fogged by
 $F=1-e^{-0.006\max(d-45,\,0)}$.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Pattern & Used for & Method \\
+\midrule
+Brick & Walls, the curved wall & Running bond, mortar lines, per-brick colour \\
+Paving & Plaza and paths & Running bond with paver proportions \\
+Tile & Interior floors & Straight $0.6$\,m grid with thin joints \\
+Natural & Road, bark, roof & Value noise at two scales \\
+Lawn & Grass & Large patches plus fine blade noise \\
+Thatch & Gazebo roof & Stretched noise \\
+Glass & Windows & Sky or ground reflection by viewing angle \\
+Interior & Indoor surfaces & Neutral ambient colour \\
+Emissive & Lamps, lit signs & Own colour, unaffected by lighting \\
+\bottomrule
+\end{tabular}
+\caption{Procedural materials selected by the pattern number of a vertex.}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.49\textwidth}\includegraphics[width=\textwidth]{street-wall.png}\caption{Sun shadows and procedural brick}\end{subfigure}\hfill
+\begin{subfigure}[b]{0.49\textwidth}\includegraphics[width=\textwidth]{room-interior.png}\caption{A room lit only by its ceiling light}\end{subfigure}
+\caption{Lighting in the real-time renderer: (a) outdoors the sun, the shadow map and
+the brick pattern; (b) indoors a point light with distance attenuation.}
+\end{figure}
 
 \subsection{Transparent glass}
 Glass panes are drawn after all opaque geometry, sorted from far to near,
@@ -673,6 +817,29 @@ Each pixel is divided into a $g\times g$ grid with one jittered sample per
 cell, and the results are averaged. Image rows are rendered in parallel by
 one thread per processor.
 
+\subsection{The algorithm in outline}
+For every sample of every pixel the tracer performs these steps.
+\begin{enumerate}
+\item Generate the primary ray and find its nearest hit in the hierarchy; if there is none, return the sky colour.
+\item Interpolate the normal at the hit and evaluate the procedural material there.
+\item Send occlusion rays and scale the ambient term.
+\item Send a shadow ray to the sun and to each point light within range, and add the Phong terms of those that are visible.
+\item If the surface is glass, continue the ray through it; if it is glossy or glass, trace the mirrored ray and blend by the Fresnel factor. Stop after three bounces.
+\item Apply distance fog and return the colour.
+\end{enumerate}
+The procedural brick, tile, lawn and sky functions are written once more in
+C++ with the same integer hash as the shader, so that both renderers
+produce identical patterns.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.49\textwidth}\includegraphics[width=\textwidth]{raytraced-terrace.png}\caption{First-floor terrace}\end{subfigure}\hfill
+\begin{subfigure}[b]{0.49\textwidth}\includegraphics[width=\textwidth]{raytraced-corridor.png}\caption{Corridor beside the cafeteria}\end{subfigure}
+\caption{Two ray-traced views, made at an earlier stage of the model: (a) exact sun
+shadows of the portal frames; (b) glass that both transmits the dining hall and
+reflects the corridor.}
+\end{figure}
+
 \begin{table}[H]
 \centering\small
 \begin{tabular}{@{}lll@{}}
@@ -728,6 +895,53 @@ through the building with \code{WASD}; toggle shadows; pause the animation;
 and ray trace the current view with a single key. Any view can also be
 saved to an image file from the command line, with either renderer.
 
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}ll@{\hspace{2em}}ll@{}}
+\toprule
+Control & Action & Control & Action \\
+\midrule
+Mouse drag & Orbit / pan & \code{F6} & Walking mode \\
+Wheel, \code{Q} \code{E} & Zoom & \code{W A S D} & Walk (in walking mode) \\
+\code{1}--\code{9}, \code{0} & Exterior views & \code{Shift}+\code{1}--\code{9} & Interior views \\
+\code{F1}--\code{F5} & Elevations and plan & \code{F9} & Gallery of basic shapes \\
+\code{J} \code{L} & Rotate the model & \code{B} & Shadows on / off \\
+\code{Z} \code{X} & Scale the model & \code{P} & Pause fans, traffic, people \\
+\code{U} \code{O} \code{I} \code{K} & Translate the model & \code{Y} & Ray trace the current view \\
+\bottomrule
+\end{tabular}
+\caption{The main keyboard and mouse controls.}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{stair-comparison.jpg}
+\caption{Reference images (first and third) beside the model (second and fourth):
+the corridor that leads to the stair, and the stair that follows the curved wall.}
+\end{figure}
+
+\subsection{Problems met and how they were solved}
+\begin{itemize}
+\item \textbf{Walking through thin walls.} A fast step could carry the
+walker past a wall only a few centimetres thick. Each movement is now
+divided into pieces of at most $0.06$, each tested separately.
+\item \textbf{Dark interiors.} With only a sun and a sky ambient term, the
+corridors and halls were dark and blue. Point lights with attenuation,
+emissive lamps and a neutral indoor ambient colour were added.
+\item \textbf{Light leaking between storeys.} A point light also lit the
+floor below it through the slab. Each light is now faded out one storey
+below its fixture.
+\item \textbf{Shimmering patterns.} Brick joints flickered in the distance.
+The pattern is faded to its average colour once a brick is smaller than a
+pixel, using the screen-space derivative of the pattern coordinate.
+\item \textbf{Ray tracing speed.} Testing every triangle made a frame take
+hours. The bounding-volume hierarchy and one thread per processor reduced
+this to seconds or minutes.
+\item \textbf{Moving objects.} Fans, vehicles and people must not be part of
+the static mesh. They are kept in separate ranges of the vertex array and
+drawn with their own matrices each frame.
+\end{itemize}
+
 \subsection{Testing}
 Three automatic tests are provided. The first checks the triangle counts,
 bounds and normals of the basic shapes. The second checks collision in a
@@ -775,6 +989,51 @@ over the same scene made the difference between the two rendering
 approaches concrete: the rasteriser is fast but approximates shadows and
 reflections, while the ray tracer computes them directly at a much higher
 cost.
+
+
+\appendix
+\section{Source Files}
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}L{5.4cm}X@{}}
+\toprule
+File & Contents \\
+\midrule
+\code{geometry/geometry\_math.h} & Vectors, matrices, transformations, look-at, projections \\
+\code{geometry/canonical\_shapes.h} & Generators for the nine unit shapes \\
+\code{geometry/mesh.cpp} & Vertex array, transform stack, shape builders \\
+\code{scene/layout.h}, \code{materials.cpp} & Shared dimensions; named materials (colour, gloss, pattern) \\
+\code{scene/components.cpp} & Window bay, door, balcony panel, wing builders \\
+\code{scene/front.cpp} & Colonnade, portico, curved wall, corridor-end stair \\
+\code{scene/courtyard.cpp} & Stage wing, three-storey block, stage \\
+\code{scene/exterior.cpp} & Shop wing, covered corridors, cafeteria front \\
+\code{scene/interior.cpp} & Lobby, halls, shop, curved stair, terrace, lights \\
+\code{scene/landscape.cpp} & Trees, palms, hedges, gazebo \\
+\code{scene/street.cpp} & Wall, gates, road, stalls, vehicles and their motion \\
+\code{scene/people.cpp} & Pedestrian meshes and walking routes \\
+\code{input/camera.cpp} & Cameras, preset views, key and mouse handling \\
+\code{navigation/navigation.cpp} & Collision set-up and automatic route checks \\
+\code{render/shaders.cpp} & GLSL: Phong, shadows, patterns, point lights, sky \\
+\code{render/renderer.cpp} & Window and frame loop \\
+\code{render/raytracer.cpp} & CPU ray tracer \\
+\bottomrule
+\end{tabularx}
+\caption{The principal source files (paths relative to \code{src/}).}
+\end{table}
+
+\section{Building and Running}
+The project is built with CMake and a C++17 compiler; GLFW is downloaded
+automatically at the first configuration.
+\begin{verbatim}
+cmake -S . -B build -G "MinGW Makefiles"
+cmake --build build --parallel
+build\image_project.exe                              interactive viewer
+build\image_project.exe --capture 9 aerial.ppm       save one view
+build\image_project.exe --raytrace 25 cafe.ppm 1000 750 9
+build\image_project.exe --check-walk                 run the route checks
+\end{verbatim}
+The first option saves a numbered view rendered with OpenGL, the second
+renders it on the CPU, and the third walks the test routes.
 
 % ---------------------------------------------------------------- references
 \begin{thebibliography}{9}\small
